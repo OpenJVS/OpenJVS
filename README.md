@@ -52,6 +52,24 @@ sudo dpkg --install *.deb
 sudo openjvs [optional outside mapping name]
 ```
 
+All input devices are disabled by default and must be enabled explicitly, to see what devices are available type:
+
+```
+sudo openjvs --list
+```
+
+You can then enable and disable the devices by running:
+
+```
+# To enable
+sudo openjvs --enable sony-playstation-r-3-controller
+
+# To disable
+sudo openjvs --disable sony-playstation-r-3-controller
+```
+
+Each new device is seen as a new player. For example if you plug 2 playstation controllers in, they will be mapped to PLAYER 1 and PLAYER 2. This means you should disable controllers you don't want to use, as they will take up player space.
+
 ## Mapping
 
 The new mapping system is based on a two stage mapping process. The first stage will map your device to the controller seen below. The second stage will map the controller seen below to an actual game on an arcade system. This means that when you want to change controller, you only have to create one map file for your new controller, and likewise if you want to change game you only have to make one map file for your new game.
