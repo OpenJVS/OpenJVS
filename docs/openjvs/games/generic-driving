@@ -1,0 +1,11 @@
+# Generic mapping file for driving games
+# Author: Bobby Dilley
+
+# Include the generic mapping file
+INCLUDE generic
+
+# Add in analogue driving controls for steering, accel and break
+CONTROLLER_ANALOGUE_X CONTROLLER_1 ANALOGUE_1
+CONTROLLER_ANALOGUE_R CONTROLLER_1 ANALOGUE_2
+CONTROLLER_ANALOGUE_L CONTROLLER_1 ANALOGUE_3
+

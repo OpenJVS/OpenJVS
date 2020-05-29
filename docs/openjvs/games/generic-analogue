@@ -1,0 +1,13 @@
+# Generic mapping file for analogue joystick games
+# Author: Bobby Dilley
+
+# Include the normal generic mapping file
+INCLUDE generic
+
+# Player one controls
+CONTROLLER_ANALOGUE_X CONTROLLER_1 ANALOGUE_1
+CONTROLLER_ANALOGUE_Y CONTROLLER_1 ANALOGUE_2
+
+# Player two controls
+CONTROLLER_ANALOGUE_X CONTROLLER_2 ANALOGUE_3
+CONTROLLER_ANALOGUE_Y CONTROLLER_2 ANALOGUE_4

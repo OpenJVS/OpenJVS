@@ -1,0 +1,16 @@
+{
+    "files.associations": {
+        "cstddef": "cpp",
+        "io.h": "c",
+        "__locale": "c",
+        "__string": "c",
+        "string": "c",
+        "string_view": "c",
+        "typeinfo": "c",
+        "array": "c",
+        "cmath": "c"
+    },
+    "editor.formatOnPaste": true,
+    "editor.formatOnSave": true,
+    "editor.formatOnType": true
+}

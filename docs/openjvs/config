@@ -1,0 +1,27 @@
+# OpenJVS Config
+# 
+# This configuration file should generally not be touched
+# unless you know what you are doing.
+#
+# Author: Bobby Dilley
+
+# Setup the default game to emulate
+DEFAULT_GAME generic-driving
+
+# Setup which IO to emulate by default
+EMULATE SEGA_TYPE_3_IO
+
+# Setup the sense line
+# SENSE_LINE_TYPE 0 - This will turn the sense line off
+# SENSE_LINE_TYPE 1 - The Raspberry Pi Sense Line
+SENSE_LINE_TYPE 0
+SENSE_LINE_PIN 12
+
+# Setup the debug mode for outputting debug information
+# DEBUG_MODE 1 - This will show the JVS outputs
+# DEBUG_MODE 2 - This will show the raw packet outputs
+DEBUG_MODE 0
+
+# Setup the device path
+DEVICE_PATH /dev/ttyUSB0
+
