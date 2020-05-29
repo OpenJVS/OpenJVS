@@ -14,6 +14,7 @@ EMULATE SEGA_TYPE_3_IO
 # Setup the sense line
 # SENSE_LINE_TYPE 0 - This will turn the sense line off
 # SENSE_LINE_TYPE 1 - The Raspberry Pi Sense Line
+# SENSE_LINE_TYPE 2 - The switch style of sense line
 SENSE_LINE_TYPE 0
 SENSE_LINE_PIN 12
 
