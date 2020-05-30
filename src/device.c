@@ -14,7 +14,7 @@ int initDevice(char *devicePath, int senseLineType, int senseLinePin)
 {
   if ((serialIO = open(devicePath, O_RDWR | O_NOCTTY)) < 0)
   {
-    debug(0, "Error: Failed to open %s\n", devicePath);
+    debug(0, "Error: Failed to open %s with:%d \n", devicePath, serialIO);
     return 0;
   }
 
@@ -118,7 +118,7 @@ int setupGPIO(int pin)
   ssize_t bytesWritten;
   int fd;
 
-  if ((fd = open("/sys/class/gpio/export", O_WRONLY)) != -1)
+  if ((fd = open("/sys/class/gpio/export", O_WRONLY)) == -1)
     return 0;
 
   bytesWritten = snprintf(buffer, 3, "%d", pin);

@@ -14,8 +14,10 @@ char *getNextToken(char *buffer, char *seperator, char **saveptr)
 
     for (int i = 0; i < (int)strlen(token); i++)
     {
-        if (token[i] == '\n')
+        if ((token[i] == '\n') || (token[i] == '\r'))
+        {
             token[i] = 0;
+        }
     }
     return token;
 }
