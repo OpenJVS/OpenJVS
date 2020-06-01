@@ -126,6 +126,21 @@ JVSConfigStatus parseInputMapping(char *path, InputMappings *inputMappings)
             inputMappings->mappings[inputMappings->length] = mapping;
             inputMappings->length++;
         }
+        else if (command[0] == 'A' && command[4] == 'H')
+        {
+            int code = evDevFromString(command);
+            ControllerInput input = controllerInputFromString(getNextToken(NULL, " ", &saveptr));
+            ControllerInput secondaryInput = controllerInputFromString(getNextToken(NULL, " ", &saveptr));
+
+            InputMapping mapping = {
+                .type = HAT,
+                .code = code,
+                .input = input,
+                .inputSecondary = secondaryInput};
+
+            inputMappings->mappings[inputMappings->length] = mapping;
+            inputMappings->length++;
+        }
         else if (command[0] == 'A')
         {
             InputMapping mapping = {

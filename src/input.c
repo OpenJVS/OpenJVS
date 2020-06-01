@@ -110,6 +110,7 @@ void *deviceThread(void *_args)
 
         if (data_to_read && (sizeof(event) == read(fd, &event, sizeof(event))))
         {
+
             switch (event.type)
             {
 
@@ -120,6 +121,26 @@ void *deviceThread(void *_args)
             break;
             case EV_ABS:
             {
+                /* Support HAT Controlls */
+                if (inputs.abs[event.code].type == HAT)
+                {
+
+                    if (event.value == inputs.absMin[event.code])
+                    {
+                        setSwitch(inputs.abs[event.code].jvsPlayer, inputs.abs[event.code].output, 1);
+                    }
+                    else if (event.value == inputs.absMax[event.code])
+                    {
+                        setSwitch(inputs.abs[event.code].jvsPlayer, inputs.abs[event.code].outputSecondary, 1);
+                    }
+                    else
+                    {
+                        setSwitch(inputs.abs[event.code].jvsPlayer, inputs.abs[event.code].output, 0);
+                        setSwitch(inputs.abs[event.code].jvsPlayer, inputs.abs[event.code].outputSecondary, 0);
+                    }
+                    continue;
+                }
+
                 /* Handle the wii remotes differently */
                 if (wiiMode)
                 {
@@ -256,6 +277,28 @@ int processMappings(InputMappings *inputMappings, OutputMappings *outputMappings
             if (outputMappings->mappings[j].input == inputMappings->mappings[i].input && outputMappings->mappings[j].controllerPlayer == player)
             {
                 tempMapping = outputMappings->mappings[j];
+
+                /* Find the second mapping if needed*/
+                if (inputMappings->mappings[i].type == HAT)
+                {
+                    int foundSecondaryMapping = 0;
+                    for (int p = outputMappings->length - 1; p >= 0; p--)
+                    {
+                        if (outputMappings->mappings[p].input == inputMappings->mappings[i].inputSecondary && outputMappings->mappings[p].controllerPlayer == player)
+                        {
+                            tempMapping.outputSecondary = outputMappings->mappings[p].output;
+                            tempMapping.type = HAT;
+                            found = 1;
+                            break;
+                        }
+                    }
+                    if (!foundSecondaryMapping)
+                    {
+                        debug(1, "Error: no outside secondary mapping found for HAT\n");
+                        continue;
+                    }
+                }
+
                 tempMapping.reverse ^= inputMappings->mappings[i].reverse;
                 found = 1;
                 break;
@@ -268,13 +311,22 @@ int processMappings(InputMappings *inputMappings, OutputMappings *outputMappings
             continue;
         }
 
+        if (inputMappings->mappings[i].type == HAT)
+        {
+            evInputs->abs[inputMappings->mappings[i].code].type = HAT;
+            evInputs->abs[inputMappings->mappings[i].code] = tempMapping;
+            evInputs->absEnabled[inputMappings->mappings[i].code] = 1;
+        }
+
         if (inputMappings->mappings[i].type == ANALOGUE)
         {
+            evInputs->abs[inputMappings->mappings[i].code].type = ANALOGUE;
             evInputs->abs[inputMappings->mappings[i].code] = tempMapping;
             evInputs->absEnabled[inputMappings->mappings[i].code] = 1;
         }
         else if (inputMappings->mappings[i].type == SWITCH)
         {
+            evInputs->abs[inputMappings->mappings[i].code].type = SWITCH;
             evInputs->key[inputMappings->mappings[i].code] = tempMapping;
             evInputs->absEnabled[inputMappings->mappings[i].code] = 1;
         }

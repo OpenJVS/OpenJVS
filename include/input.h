@@ -28,6 +28,7 @@ typedef enum
     ANALOGUE,
     SWITCH,
     ROTARY,
+    HAT,
 } InputType;
 
 typedef enum
@@ -830,6 +831,7 @@ typedef struct
 {
     InputType type;
     ControllerInput input;
+    ControllerInput inputSecondary;
     int code;
     int reverse;
 } InputMapping;
@@ -841,6 +843,7 @@ typedef struct
     ControllerInput input;
     ControllerPlayer controllerPlayer;
     JVSInput output;
+    JVSInput outputSecondary;
     JVSPlayer jvsPlayer;
     int reverse;
 } OutputMapping;
