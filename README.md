@@ -95,7 +95,12 @@ BTN_NORTH CONTROLLER_ANALOGUE_C
 ABS_X CONTROLLER_ANALOGUE_X
 ABS_Y CONTROLLER_ANALOGUE_Y REVERSE
 
+
+# Map a HAT controller
+ABS_HAT0X CONTROLLER_BUTTON_LEFT CONTROLLER_BUTTON_RIGHT
 ```
+
+As above you can map the HAT controls which are sometimes used for DPADS. This should take controller button outputs on a single line.
 
 FROM keywords are selected from the list of linux input event keywords. These are the same as the ones shown when you run `sudo evtest`. TO keywords are selected from the pre defined virtual controller mapping keywords list. Below is the virtual controller that the mapping is based upon, along with the mapping keywords used to reference this controller.
 
