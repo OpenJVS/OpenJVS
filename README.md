@@ -1,5 +1,3 @@
-[![Build status](https://github.com/bobbydilley/OpenJVS3/workflows/Build/badge.svg?branch=master)](https://github.com/bobbydilley/OpenJVS3/actions?query=branch%3Amaster)
-
 # OpenJVS
 
 OpenJVS is an emulator for JVS Arcade IO boards which are used in many arcade systems to this day.
