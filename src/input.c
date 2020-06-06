@@ -196,10 +196,11 @@ void *deviceThread(void *_args)
                 /* Handle normally mapped analogue controls */
                 if (inputs.absEnabled[event.code])
                 {
-                    double scaled = ((double)(event.value * inputs.absMultiplier[event.code]) - inputs.absMin[event.code]) / (inputs.absMax[event.code] - inputs.absMin[event.code]);
+                    double scaled = ((double)((double)event.value * (double)inputs.absMultiplier[event.code]) - inputs.absMin[event.code]) / (inputs.absMax[event.code] - inputs.absMin[event.code]);
 
-                    /* Make sure it doesn't go over 1 if its multiplied */
+                    /* Make sure it doesn't go over 1 or below 0 if its multiplied */
                     scaled = scaled > 1 ? 1 : scaled;
+                    scaled = scaled < 0 ? 0 : scaled;
 
                     setAnalogue(inputs.abs[event.code].output, inputs.abs[event.code].reverse ? 1 - scaled : scaled);
                     setGun(inputs.abs[event.code].output, inputs.abs[event.code].reverse ? 1 - scaled : scaled);

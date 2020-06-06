@@ -2357,7 +2357,7 @@ typedef struct
 typedef struct
 {
     int absEnabled[MAX_EV_ITEMS];
-    int absMultiplier[MAX_EV_ITEMS];
+    double absMultiplier[MAX_EV_ITEMS];
     int absMin[MAX_EV_ITEMS];
     int absMax[MAX_EV_ITEMS];
     OutputMapping abs[MAX_EV_ITEMS];
