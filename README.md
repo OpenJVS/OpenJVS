@@ -78,7 +78,12 @@ To create mapping you should become familiar with the program _evtest_ which can
 
 Files for mapping your own controller to this virtual controller live in `/etc/openjvs/devices/` and should be named as the same name the controller comes up in when you run `sudo evtest` with the spaces replaced with `-` symbols.
 
-The file consists of multiple lines with a FROM and TO mapping seperated with a space like below. Note `REVERSE` can be added to the end of a line to reverse the direction of the input.
+The file consists of multiple lines with a FROM and TO mapping seperated with a space like below. 
+
+Note extra modifiers can be used on analogue channels:
+
+- `REVERSE` can be added to the end of a line to reverse the direction of the input
+- `SENSITIVITY 1.9` can be used to multiply the sensitivity of the devices analogue axis.
 
 ```
 # Example Mapping File
@@ -92,6 +97,8 @@ BTN_NORTH CONTROLLER_ANALOGUE_C
 # Map the analogue section
 ABS_X CONTROLLER_ANALOGUE_X
 ABS_Y CONTROLLER_ANALOGUE_Y REVERSE
+ABS_Z CONTROLLER_ANALOGUE_R REVERSE SENSITIVITY 1.5
+ABS_RZ CONTROLLER_ANALOGUE_L SENSITIVITY 0.9
 
 
 # Map a HAT controller
