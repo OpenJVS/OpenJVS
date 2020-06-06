@@ -167,14 +167,14 @@ void *deviceThread(void *_args)
                     {
                         /* Set screen in player 1 */
                         setSwitch(PLAYER_1, BUTTON_2, 0);
-                        int middlex = (int)((x0 + x1) / 2.0);
-                        int middley = (int)((y0 + y1) / 2.0);
+                        int middlex = (int)((double)(x0 + x1) / 2.0);
+                        int middley = (int)((double)(y0 + y1) / 2.0);
 
-                        int valuex = middlex;
-                        int valuey = 1023 - middley;
+                        int valuex = 1023 - middlex;
+                        int valuey = middley;
 
-                        double finalX = (((double)valuex / 1023) * 1.0);
-                        double finalY = (((double)valuey / 1023) * 1.0);
+                        double finalX = (((double)valuex / (double)1023) * 1.0);
+                        double finalY = (((double)valuey / (double)1023) * 1.0);
 
                         setAnalogue(0, finalX);
                         setAnalogue(1, finalY);
