@@ -194,7 +194,11 @@ void *deviceThread(void *_args)
                 /* Handle normally mapped analogue controls */
                 if (inputs.absEnabled[event.code])
                 {
-                    double scaled = ((double)event.value - inputs.absMin[event.code]) / (inputs.absMax[event.code] - inputs.absMin[event.code]);
+                    double scaled = ((double)(event.value * inputs.absMultiplier[event.code]) - inputs.absMin[event.code]) / (inputs.absMax[event.code] - inputs.absMin[event.code]);
+
+                    /* Make sure it doesn't go over 1 if its multiplied */
+                    scaled = scaled > 1 ? 1 : scaled;
+
                     setAnalogue(inputs.abs[event.code].output, inputs.abs[event.code].reverse ? 1 - scaled : scaled);
                     setGun(inputs.abs[event.code].output, inputs.abs[event.code].reverse ? 1 - scaled : scaled);
                 }
@@ -268,6 +272,7 @@ int processMappings(InputMappings *inputMappings, OutputMappings *outputMappings
     for (int i = 0; i < inputMappings->length; i++)
     {
         int found = 0;
+        double multiplier = 1;
         OutputMapping tempMapping;
         for (int j = outputMappings->length - 1; j >= 0; j--)
         {
@@ -300,6 +305,7 @@ int processMappings(InputMappings *inputMappings, OutputMappings *outputMappings
                 }
 
                 tempMapping.reverse ^= inputMappings->mappings[i].reverse;
+                multiplier = inputMappings->mappings[i].multiplier;
                 found = 1;
                 break;
             }
@@ -323,6 +329,7 @@ int processMappings(InputMappings *inputMappings, OutputMappings *outputMappings
             evInputs->abs[inputMappings->mappings[i].code].type = ANALOGUE;
             evInputs->abs[inputMappings->mappings[i].code] = tempMapping;
             evInputs->absEnabled[inputMappings->mappings[i].code] = 1;
+            evInputs->absMultiplier[inputMappings->mappings[i].code] = multiplier;
         }
         else if (inputMappings->mappings[i].type == SWITCH)
         {

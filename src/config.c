@@ -147,14 +147,25 @@ JVSConfigStatus parseInputMapping(char *path, InputMappings *inputMappings)
                 .type = ANALOGUE,
                 .code = evDevFromString(command),
                 .input = controllerInputFromString(getNextToken(NULL, " ", &saveptr)),
+                .reverse = 0,
+                .multiplier = 1,
             };
 
             /* Check to see if we should reverse */
-            char *reverse = getNextToken(NULL, " ", &saveptr);
-            if (reverse != NULL && strcmp(reverse, "REVERSE") == 0)
+            char *extra = getNextToken(NULL, " ", &saveptr);
+            while (extra != NULL)
             {
-                mapping.reverse = 1;
+                if (strcmp(extra, "REVERSE") == 0)
+                {
+                    mapping.reverse = 1;
+                }
+                else if (strcmp(extra, "SENSITIVITY") == 0)
+                {
+                    mapping.multiplier = atof(getNextToken(NULL, " ", &saveptr));
+                }
+                extra = getNextToken(NULL, " ", &saveptr);
             }
+
             inputMappings->mappings[inputMappings->length] = mapping;
             inputMappings->length++;
         }
