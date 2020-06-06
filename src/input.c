@@ -165,6 +165,7 @@ void *deviceThread(void *_args)
 
                     if (x0 != 1023 && x1 != 1023 && y0 != 1023 && y1 != 1023)
                     {
+                        /* Set screen in player 1 */
                         setSwitch(PLAYER_1, BUTTON_2, 0);
                         int middlex = (int)((x0 + x1) / 2.0);
                         int middley = (int)((y0 + y1) / 2.0);
@@ -172,8 +173,8 @@ void *deviceThread(void *_args)
                         int valuex = middlex;
                         int valuey = 1023 - middley;
 
-                        unsigned char finalX = (unsigned char)(((double)valuex / 1023) * 255.0);
-                        unsigned char finalY = (unsigned char)(((double)valuey / 1023) * 255.0);
+                        double finalX = (((double)valuex / 1023) * 1.0);
+                        double finalY = (((double)valuey / 1023) * 1.0);
 
                         setAnalogue(0, finalX);
                         setAnalogue(1, finalY);
@@ -182,6 +183,7 @@ void *deviceThread(void *_args)
                     }
                     else
                     {
+                        /* Set screen out player 1 */
                         setSwitch(PLAYER_1, BUTTON_2, 1);
                         setAnalogue(0, 0);
                         setAnalogue(1, 0);
