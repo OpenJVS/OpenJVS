@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define JVS_MAX_STATE_SIZE 16
+#define JVS_MAX_STATE_SIZE 100
 
 typedef enum
 {

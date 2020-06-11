@@ -26,7 +26,6 @@ void debugBuffer(int level, char *buffer, int length)
     if (globalLevel < level)
         return;
 
-    printf("BUFFER: ");
     for (int i = 0; i < length; i++)
         printf("0x%02hhX ", buffer[i]);
     printf("\n");

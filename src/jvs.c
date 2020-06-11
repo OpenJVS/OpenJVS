@@ -427,7 +427,8 @@ JVSStatus processPacket()
 			if (coin_decrement > localState->coinCount[0])
 				coin_decrement = localState->coinCount[0];
 
-			localState->coinCount[0] -= coin_decrement;
+			for (int i = 0; i < localCapabilities->coins; i++)
+				localState->coinCount[i] -= coin_decrement;
 		}
 		break;
 
@@ -555,6 +556,9 @@ JVSStatus readPacket(JVSPacket *packet)
 		inputIndex++;
 	}
 
+	debug(2, "INPUT:\n");
+	debugPacket(2, packet);
+
 	unsigned char checksumReceived = inputBuffer[packet->length - 1];
 
 	/* Verify checksum */
@@ -610,6 +614,9 @@ JVSStatus writePacket(JVSPacket *packet)
 	}
 	outputBuffer[outputIndex] = checksum;
 	outputIndex += 1;
+
+	debug(2, "OUTPUT:\n");
+	debugPacket(2, packet);
 
 	int written = 0, timeout = 0;
 	while (written < outputIndex)
