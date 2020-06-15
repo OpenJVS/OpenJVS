@@ -589,34 +589,44 @@ JVSStatus writePacket(JVSPacket *packet)
 	if (packet->length < 1)
 		return JVS_STATUS_SUCCESS;
 
-	int outputIndex = 0;
+	/* Get pointer to raw data in packet */
+	unsigned char *packetPointer = (unsigned char *)packet;
 
-	outputBuffer[outputIndex] = SYNC;
-	outputBuffer[outputIndex + 1] = packet->destination;
-	outputBuffer[outputIndex + 2] = packet->length + 1;
-	outputIndex += 3;
+	/* Add SYNC and reset buffer */
+	int checksum = 0;
+	int outputIndex = 1;
+	outputBuffer[0] = SYNC;
 
-	unsigned char checksum = packet->destination + packet->length + 1;
-	for (int i = 0; i < packet->length; i++)
+	packet->length++;
+
+	/* Write out entire packet */
+	for (int i = 0; i < packet->length + 1; i++)
 	{
-		if (packet->data[i] == SYNC || packet->data[i] == ESCAPE)
+		if (packetPointer[i] == SYNC || packetPointer[i] == ESCAPE)
 		{
-			outputBuffer[outputIndex] = ESCAPE;
-			outputBuffer[outputIndex + 1] = (packet->data[i] - 1);
-			outputIndex += 2;
+			outputBuffer[outputIndex++] = ESCAPE;
+			outputBuffer[outputIndex++] = (packetPointer[i] - 1);
 		}
 		else
 		{
-			outputBuffer[outputIndex] = (packet->data[i]);
-			outputIndex++;
+			outputBuffer[outputIndex++] = (packetPointer[i]);
 		}
-		checksum = (checksum + packet->data[i]) & 0xFF;
+		checksum = (checksum + packetPointer[i]) & 0xFF;
 	}
-	outputBuffer[outputIndex] = checksum;
-	outputIndex += 1;
+
+	/* Write out escaped checksum */
+	if (checksum == SYNC || checksum == ESCAPE)
+	{
+		outputBuffer[outputIndex++] = ESCAPE;
+		outputBuffer[outputIndex++] = (checksum - 1);
+	}
+	else
+	{
+		outputBuffer[outputIndex++] = checksum;
+	}
 
 	debug(2, "OUTPUT:\n");
-	debugPacket(2, packet);
+	debugBuffer(2, outputBuffer, outputIndex);
 
 	int written = 0, timeout = 0;
 	while (written < outputIndex)
