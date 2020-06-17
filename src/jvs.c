@@ -472,10 +472,10 @@ JVSStatus processPacket()
 				debug(1, "CMD_NAMCO_SPECIFIC (Command shown below)\n");
 
 			debug(0, "CMD_UNSUPPORTED (Unsupported command [0x%02hhX])\n", inputPacket.data[index]);
-			outputPacket.length = 1;
+			/*outputPacket.length = 1;
 			outputPacket.data[0] = STATUS_UNSUPPORTED;
 			writePacket(&outputPacket);
-			return JVS_STATUS_ERROR_UNSUPPORTED_COMMAND;
+			return JVS_STATUS_ERROR_UNSUPPORTED_COMMAND;*/
 		}
 		}
 		index += size;
