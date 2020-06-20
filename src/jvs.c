@@ -494,83 +494,75 @@ JVSStatus processPacket()
  *
  * @param packet The packet to read into
  */
-JVSStatus readPacket(JVSPacket *packet)
+JVSStatus readPacket(JVSPacket &packet)
 {
-	int read = 0, timeout = 0;
+	int bytesAvailable = 0, escape = 0, phase = 0, index = 0, dataIndex = 0, finished = 0, checksum = 0;
 
-	/* Wait for the SYNC signal */
-	read = readBytes(inputBuffer, 1);
-	while (inputBuffer[0] != SYNC)
+	while (!finished)
 	{
-		if (read != 0)
-			timeout = 0;
+		int bytesRead = read(&inputBuffer + bytesAvailable, JVS_MAX_PACKET_SIZE - bytesAvailable);
 
-		if (timeout > JVS_RETRY_COUNT)
+		if (bytesRead < 0)
 			return JVS_STATUS_ERROR_TIMEOUT;
 
-		read = readBytes(inputBuffer, 1);
-		timeout++;
-	}
+		bytesAvailable += bytesRead;
 
-	/* Read the length and destination */
-	read = 0, timeout = 0;
-	while (read < 2)
-	{
-		if (read != 0)
-			timeout = 0;
-
-		if (timeout > JVS_RETRY_COUNT)
-			return JVS_STATUS_ERROR_TIMEOUT;
-
-		read += readBytes((unsigned char *)packet + read, 2 - read);
-		timeout++;
-	}
-
-	unsigned char checksumComputed = packet->destination + packet->length;
-
-	/* Read the payload of the packet */
-	read = 0, timeout = 0;
-	while (read < packet->length)
-	{
-		if (read != 0)
-			timeout = 0;
-
-		if (timeout > JVS_RETRY_COUNT)
-			return JVS_STATUS_ERROR_TIMEOUT;
-
-		read += readBytes(inputBuffer + read, packet->length - read);
-		timeout++;
-	}
-
-	/* Unescape the packet and calculate the checksum */
-	int inputIndex = 0;
-	for (int i = 0; i < packet->length - 1; i++)
-	{
-		packet->data[inputIndex] = inputBuffer[i];
-		if (packet->data[inputIndex] == ESCAPE)
+		while (index < bytesAvailable - 1 && !finished)
 		{
-			i++;
-			packet->data[inputIndex] = inputBuffer[i] + 1;
+			/* If we encounter a SYNC start again */
+			if (!escape && inputBuffer[index] == SYNC)
+			{
+				phase = 0;
+				dataIndex = 0;
+				index++;
+				continue;
+			}
+
+			/* If we encounter an ESCAPE byte escape the next byte */
+			if (!escape && inputBuffer[index] == ESCAPE)
+			{
+				escape = 1;
+				index++;
+				continue;
+			}
+
+			/* Escape next byte by adding 1 to it */
+			if (escape)
+			{
+				inputBuffer[index]++;
+				escape = 0;
+			}
+
+			/* Deal with the main bulk of the data */
+			switch (phase)
+			{
+			case 0: // If we have not yet got the address
+				packet->destination = inputBuffer[index];
+				checksum = packet->destination & 0xFF;
+				phase++;
+				break;
+			case 1: // If we have not yet got the length
+				packet->length = inputBuffer[index];
+				checksum += (checksum + packet->length) & 0xFF;
+				phase++;
+				break;
+			case 2: // If there is still data to read
+				if (dataIndex == packet->length - 1)
+				{
+					if (checksum != inputBuffer[index])
+						return JVS_STATUS_ERROR_CHECKSUM;
+					finished = 1;
+					break;
+				}
+				packet->data[dataIndex++] = inputBuffer[index];
+				checksum += (checksum + inputBuffer[index]) & 0xFF;
+				break;
+			default:
+				return JVS_STATUS_ERROR;
+			}
+			index++;
 		}
-		checksumComputed = (checksumComputed + packet->data[inputIndex]) & 0xFF;
-		inputIndex++;
 	}
-
-	debug(2, "INPUT:\n");
-	debugPacket(2, packet);
-
-	unsigned char checksumReceived = inputBuffer[packet->length - 1];
-
-	/* Verify checksum */
-	if (checksumReceived != checksumComputed)
-	{
-		outputPacket.destination = BUS_MASTER;
-		outputPacket.length = 1;
-		outputPacket.data[0] = STATUS_CHECKSUM_FAILURE;
-		writePacket(&outputPacket);
-		return JVS_STATUS_ERROR_CHECKSUM;
-	}
-
 	return JVS_STATUS_SUCCESS;
 }
 
@@ -628,18 +620,8 @@ JVSStatus writePacket(JVSPacket *packet)
 	debug(2, "OUTPUT:\n");
 	debugBuffer(2, outputBuffer, outputIndex);
 
-	int written = 0, timeout = 0;
-	while (written < outputIndex)
-	{
-		if (written != 0)
-			timeout = 0;
-
-		if (timeout > JVS_RETRY_COUNT)
-			return JVS_STATUS_ERROR_WRITE_FAIL;
-
-		written += writeBytes(outputBuffer + written, outputIndex - written);
-		timeout++;
-	}
+	if (writeBytes(outputBuffer, outputIndex) != outputIndex)
+		return JVS_STATUS_ERROR_WRITE_FAIL;
 
 	return JVS_STATUS_SUCCESS;
 }

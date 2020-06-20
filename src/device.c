@@ -1,6 +1,8 @@
 #include "device.h"
 #include "debug.h"
 
+#define TIMEOUT_SELECT 500
+
 int serialIO = -1;
 int localSenseLinePin = 12;
 int localSenseLineType = 0;
@@ -12,7 +14,7 @@ int writeGPIO(int pin, int value);
 
 int initDevice(char *devicePath, int senseLineType, int senseLinePin)
 {
-  if ((serialIO = open(devicePath, O_RDWR | O_NOCTTY)) < 0)
+  if ((serialIO = open(devicePath, O_RDWR | O_NOCTTY | O_SYNC | O_NDELAY)) < 0)
   {
     debug(0, "Error: Failed to open %s with:%d \n", devicePath, serialIO);
     return 0;
@@ -33,10 +35,14 @@ int initDevice(char *devicePath, int senseLineType, int senseLinePin)
   switch (senseLineType)
   {
   case 0: // No sense line set
+    debug(1, "No sense line set");
+    break;
   case 1:
+    debug(1, "Float/Sync sense line set");
     setGPIODirection(senseLinePin, IN);
     break;
   case 2:
+    debug(1, "Complex sense line set");
     setGPIODirection(senseLinePin, OUT);
     break;
   default:
@@ -58,6 +64,23 @@ int closeDevice()
 
 int readBytes(unsigned char *buffer, int amount)
 {
+  fd_set fd_serial;
+  struct timeval tv;
+
+  FD_ZERO(&fd_serial);
+  FD_SET(serialIO, &fd_serial);
+
+  tv.tv_sec = 0;
+  tv.tv_usec = TIMEOUT_SELECT * 1000;
+
+  int bytesAvailable = select(serialIO + 1, &fd_serial, NULL, NULL, &tv);
+
+  if (bytesAvailable < 0)
+    return -1;
+
+  if (!FD_ISSET(serialIO, &fd_serial))
+    return -1;
+
   return read(serialIO, buffer, amount);
 }
 
@@ -86,7 +109,7 @@ int setSerialAttributes(int fd, int myBaud)
   options.c_oflag &= ~OPOST;
 
   options.c_cc[VMIN] = 0;
-  options.c_cc[VTIME] = 1; // One seconds (10 deciseconds)
+  options.c_cc[VTIME] = 0; // One seconds (10 deciseconds)
 
   tcsetattr(fd, TCSANOW, &options);
 

@@ -78,7 +78,7 @@ To create mapping you should become familiar with the program _evtest_ which can
 
 Files for mapping your own controller to this virtual controller live in `/etc/openjvs/devices/` and should be named as the same name the controller comes up in when you run `sudo evtest` with the spaces replaced with `-` symbols.
 
-The file consists of multiple lines with a FROM and TO mapping seperated with a space like below. 
+The file consists of multiple lines with a FROM and TO mapping seperated with a space like below.
 
 Note extra modifiers can be used on analogue channels:
 
@@ -132,7 +132,7 @@ FROM keywords are selected from the list of linux input event keywords. These ar
 
                  |_____________|
                     Menu Pad
-                    
+
 MAPPING KEYWORD                         DIAGRAM LABEL                 PURPOSE
 ---------------                         -------------                 -------
 CONTROLLER_BUTTON_TEST                  TE                            Test Button,
@@ -156,12 +156,12 @@ CONTROLLER_BUTTON_G,                                                  Button 7,
 CONTROLLER_BUTTON_H,                                                  Button 8,
 CONTROLLER_BUTTON_I,                                                  Button 9,
 CONTROLLER_BUTTON_J,                                                  Button 10,
-CONTROLLER_ANALOGUE_X,                  LS X                          Analogue Joystick X / Steering Wheel,                  
-CONTROLLER_ANALOGUE_Y,                  LS Y                          Analogue Joystick Y / Aeroplane Pitch,  
-CONTROLLER_ANALOGUE_Z,                  RS X                          Analogue Joystick Z,   
-CONTROLLER_ANALOGUE_R,                  RT                            Accelerator,   
-CONTROLLER_ANALOGUE_L,                  LT                            Breaks,   
-CONTROLLER_ANALOGUE_T,                  RS Y                          Analogue Joystick T,   
+CONTROLLER_ANALOGUE_X,                  LS X                          Analogue Joystick X / Steering Wheel,
+CONTROLLER_ANALOGUE_Y,                  LS Y                          Analogue Joystick Y / Aeroplane Pitch,
+CONTROLLER_ANALOGUE_Z,                  RS X                          Analogue Joystick Z,
+CONTROLLER_ANALOGUE_R,                  RT                            Accelerator,
+CONTROLLER_ANALOGUE_L,                  LT                            Breaks,
+CONTROLLER_ANALOGUE_T,                  RS Y                          Analogue Joystick T,
 ```
 
 ### Virtual Controller to Game Mapping

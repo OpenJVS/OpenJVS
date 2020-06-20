@@ -3,10 +3,10 @@ cmake_minimum_required(VERSION 3.10)
 project(openjvs)
 
 project(openjvs
-        VERSION "3.2.1"
+        VERSION "3.2.2"
 	LANGUAGES "C"
         DESCRIPTION "An emulator for arcade JVS I/O boards"
-        HOMEPAGE_URL "https://github.com/bobbydilley/OpenJVS3"
+        HOMEPAGE_URL "https://github.com/OpenJVS"
 )
 
 find_package(Threads REQUIRED)
@@ -34,10 +34,9 @@ install(TARGETS ${PROJECT_NAME}
 		LIBRARY DESTINATION "lib/"
 )
 
-
 install(DIRECTORY ${CMAKE_SOURCE_DIR}/docs/openjvs
 		COMPONENT ${PROJECT_NAME}
-		DESTINATION "/etc/"	
+		DESTINATION "/etc/"
 )
 
 set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
