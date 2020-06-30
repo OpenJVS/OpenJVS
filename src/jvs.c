@@ -543,7 +543,7 @@ JVSStatus readPacket(JVSPacket &packet)
 				break;
 			case 1: // If we have not yet got the length
 				packet->length = inputBuffer[index];
-				checksum += (checksum + packet->length) & 0xFF;
+				checksum = (checksum + packet->length) & 0xFF;
 				phase++;
 				break;
 			case 2: // If there is still data to read
@@ -555,7 +555,7 @@ JVSStatus readPacket(JVSPacket &packet)
 					break;
 				}
 				packet->data[dataIndex++] = inputBuffer[index];
-				checksum += (checksum + inputBuffer[index]) & 0xFF;
+				checksum = (checksum + inputBuffer[index]) & 0xFF;
 				break;
 			default:
 				return JVS_STATUS_ERROR;
