@@ -498,27 +498,22 @@ JVSStatus processPacket()
  */
 JVSStatus readPacket(JVSPacket *packet)
 {
-	clock_t start, end;
-	double cpu_time_used;
-
-	start = clock();
-
 	int bytesAvailable = 0, escape = 0, phase = 0, index = 0, dataIndex = 0, finished = 0;
 	unsigned char checksum = 0x00;
 
 	while (!finished)
 	{
-		int bytesRead = readBytes(&inputBuffer[bytesAvailable], JVS_MAX_PACKET_SIZE - bytesAvailable);
+		int bytesRead = readBytes(inputBuffer + bytesAvailable, JVS_MAX_PACKET_SIZE - bytesAvailable);
 
 		if (bytesRead < 0)
 			return JVS_STATUS_ERROR_TIMEOUT;
 
 		bytesAvailable += bytesRead;
 
-		while (index < bytesAvailable - 1 && !finished)
+		while ((index < (bytesAvailable - 1)) && !finished)
 		{
 			/* If we encounter a SYNC start again */
-			if (!escape && inputBuffer[index] == SYNC)
+			if (!escape && (inputBuffer[index] == SYNC))
 			{
 				phase = 0;
 				dataIndex = 0;
@@ -555,7 +550,7 @@ JVSStatus readPacket(JVSPacket *packet)
 				phase++;
 				break;
 			case 2: // If there is still data to read
-				if (dataIndex == packet->length - 1)
+				if (dataIndex == (packet->length - 1))
 				{
 					if (checksum != inputBuffer[index])
 						return JVS_STATUS_ERROR_CHECKSUM;
@@ -574,11 +569,6 @@ JVSStatus readPacket(JVSPacket *packet)
 
 	debug(2, "INPUT:\n");
 	debugBuffer(2, inputBuffer, index);
-
-	end = clock();
-	cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
-
-	printf("%f\n", cpu_time_used);
 
 	return JVS_STATUS_SUCCESS;
 }

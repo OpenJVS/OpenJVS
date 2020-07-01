@@ -19,6 +19,7 @@ add_executable(${PROJECT_NAME}
         ${Sources}
 )
 
+
 set_target_properties(${PROJECT_NAME} PROPERTIES
         C_STANDARD 99
 )
@@ -38,6 +39,11 @@ install(DIRECTORY ${CMAKE_SOURCE_DIR}/docs/openjvs
 		COMPONENT ${PROJECT_NAME}
 		DESTINATION "/etc/"
 )
+
+INCLUDE(CTest)
+enable_testing()
+add_executable(openjvs-test ${PROJECT_SOURCE_DIR}/tests/test.c)
+add_test(openjvs-test openjvs-test)
 
 set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
 SET(CPACK_GENERATOR "DEB")
