@@ -3,6 +3,8 @@
 #include "config.h"
 #include "debug.h"
 
+#include <time.h>
+
 /* The deviceID is set to 1 to allow the system to work after a reboot of OpenJVS */
 int deviceID = 1;
 
@@ -494,13 +496,19 @@ JVSStatus processPacket()
  *
  * @param packet The packet to read into
  */
-JVSStatus readPacket(JVSPacket &packet)
+JVSStatus readPacket(JVSPacket *packet)
 {
-	int bytesAvailable = 0, escape = 0, phase = 0, index = 0, dataIndex = 0, finished = 0, checksum = 0;
+	clock_t start, end;
+	double cpu_time_used;
+
+	start = clock();
+
+	int bytesAvailable = 0, escape = 0, phase = 0, index = 0, dataIndex = 0, finished = 0;
+	unsigned char checksum = 0x00;
 
 	while (!finished)
 	{
-		int bytesRead = read(&inputBuffer + bytesAvailable, JVS_MAX_PACKET_SIZE - bytesAvailable);
+		int bytesRead = readBytes(&inputBuffer[bytesAvailable], JVS_MAX_PACKET_SIZE - bytesAvailable);
 
 		if (bytesRead < 0)
 			return JVS_STATUS_ERROR_TIMEOUT;
@@ -543,7 +551,7 @@ JVSStatus readPacket(JVSPacket &packet)
 				break;
 			case 1: // If we have not yet got the length
 				packet->length = inputBuffer[index];
-				checksum += (checksum + packet->length) & 0xFF;
+				checksum = (checksum + packet->length) & 0xFF;
 				phase++;
 				break;
 			case 2: // If there is still data to read
@@ -555,7 +563,7 @@ JVSStatus readPacket(JVSPacket &packet)
 					break;
 				}
 				packet->data[dataIndex++] = inputBuffer[index];
-				checksum += (checksum + inputBuffer[index]) & 0xFF;
+				checksum = (checksum + inputBuffer[index]) & 0xFF;
 				break;
 			default:
 				return JVS_STATUS_ERROR;
@@ -563,6 +571,15 @@ JVSStatus readPacket(JVSPacket &packet)
 			index++;
 		}
 	}
+
+	debug(2, "INPUT:\n");
+	debugBuffer(2, inputBuffer, index);
+
+	end = clock();
+	cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
+
+	printf("%f\n", cpu_time_used);
+
 	return JVS_STATUS_SUCCESS;
 }
 
@@ -620,8 +637,18 @@ JVSStatus writePacket(JVSPacket *packet)
 	debug(2, "OUTPUT:\n");
 	debugBuffer(2, outputBuffer, outputIndex);
 
-	if (writeBytes(outputBuffer, outputIndex) != outputIndex)
-		return JVS_STATUS_ERROR_WRITE_FAIL;
+	int written = 0, timeout = 0;
+	while (written < outputIndex)
+	{
+		if (written != 0)
+			timeout = 0;
+
+		if (timeout > JVS_RETRY_COUNT)
+			return JVS_STATUS_ERROR_WRITE_FAIL;
+
+		written += writeBytes(outputBuffer + written, outputIndex - written);
+		timeout++;
+	}
 
 	return JVS_STATUS_SUCCESS;
 }
