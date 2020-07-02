@@ -1,5 +1,8 @@
 # Mapping for Monkey Ball
 # Author: Bobby Dilley
 
-# Include the generic analogue mapping file
-INCLUDE generic-analogue
+INCLUDE generic
+
+# Player one controls
+CONTROLLER_ANALOGUE_X CONTROLLER_1 ANALOGUE_2
+CONTROLLER_ANALOGUE_Y CONTROLLER_1 ANALOGUE_1

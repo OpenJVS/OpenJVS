@@ -1,0 +1,18 @@
+# Generic mapping file for outrun games
+# Author: RedOne87
+
+# Include the generic mapping file for driving games
+INCLUDE generic-driving
+
+# Gear-Up: P2 Up
+CONTROLLER_BUTTON_RIGHT_BUMPER CONTROLLER_1 BUTTON_UP PLAYER_2
+# Gear-Down: P2 Down
+CONTROLLER_BUTTON_LEFT_BUMPER CONTROLLER_1 BUTTON_DOWN PLAYER_2
+
+# Change View: P1 down
+CONTROLLER_BUTTON_B CONTROLLER_1 BUTTON_DOWN PLAYER_1
+# Booster: P2 Push-Button 1 
+CONTROLLER_BUTTON_A CONTROLLER_1 BUTTON_1 PLAYER_2
+
+
+

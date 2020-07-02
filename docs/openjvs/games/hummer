@@ -1,0 +1,13 @@
+# Generic mapping file for outrun games
+# Author: RedOne87
+
+#Notice: Gas and Break calibration is peculiar for you are only allowed to calibrate it within the range ~[0x10:0xE0] instead of [0x00:0xFF].
+#		 Otherwise the game will give you an error. So you have to start calibration having your analog input outside this forbidden "deadzone" area.
+
+# Include the generic mapping file for driving games
+INCLUDE generic-driving
+
+# Change View: P1 down
+CONTROLLER_BUTTON_B CONTROLLER_1 BUTTON_DOWN PLAYER_1
+# Booster: P2 Down 
+CONTROLLER_BUTTON_A CONTROLLER_1 BUTTON_DOWN PLAYER_2
