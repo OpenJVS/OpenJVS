@@ -1,7 +1,7 @@
 #include "device.h"
 #include "debug.h"
 
-#define TIMEOUT_SELECT 500
+#define TIMEOUT_SELECT 200
 
 int serialIO = -1;
 int localSenseLinePin = 12;

@@ -510,7 +510,7 @@ JVSStatus readPacket(JVSPacket *packet)
 
 		bytesAvailable += bytesRead;
 
-		while ((index < (bytesAvailable - 1)) && !finished)
+		while ((index < bytesAvailable) && !finished)
 		{
 			/* If we encounter a SYNC start again */
 			if (!escape && (inputBuffer[index] == SYNC))
