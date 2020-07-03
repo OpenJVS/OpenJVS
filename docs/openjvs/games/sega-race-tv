@@ -1,5 +1,7 @@
-# Generic mapping file for outrun games
+# Generic mapping file for Sega Race TV
 # Author: RedOne87
+
+# Todo: Might need scaling of steering input 
 
 # Include the generic mapping file for driving games
 INCLUDE generic-driving

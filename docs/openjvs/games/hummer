@@ -1,4 +1,4 @@
-# Generic mapping file for outrun games
+# Generic mapping file for Hummer Extreme
 # Author: RedOne87
 
 #Notice: Gas and Break calibration is peculiar for you are only allowed to calibrate it within the range ~[0x10:0xE0] instead of [0x00:0xFF].
