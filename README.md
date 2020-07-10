@@ -19,9 +19,9 @@ On games that require a sense line, the following has to be wired up:
 
 A list of RS485 dongles and comments are below:
 
-- FTDI - Always seems to work well
-- CP2102 - Worked for me, but a lot of people are having issues.
-- Other - Don't get them.
+- FTDI - STRONGLY RECCOMEND!
+- CP2102 - Worked for me, but a lot of people are having issues. I would generally reccomend not getting one, as I beleive a lot are fake.
+- Other - Don't get them (unless you want to try it yourself).
 
 ## Installation and Running
 
