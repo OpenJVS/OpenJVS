@@ -26,28 +26,25 @@ A list of RS485 dongles and comments are below:
 
 ## Installation and Running
 
-To install OpenJVS3 follow the instructions below to install the required packages and make the program.
+To install OpenJVS follow the instructions below to install the required packages and make the program.
 
 ```
 sudo apt install git cmake
-git clone https://github.com/bobbydilley/OpenJVS3
-cd OpenJVS3
-mkdir build && cd build
-cmake ..
-make
+git clone https://github.com/OpenJVS/OpenJVS
+cd OpenJVS
+./build.sh
 ```
 
-To run locally (from inside the build directory):
+To run locally (from inside the root directory):
 
 ```
-sudo ./openjvs [optional outside mapping name]
+sudo ./build/openjvs [optional outside mapping name]
 ```
 
-To install for globally and run (from inside the build directory):
+To install for globally and run (from inside the root directory):
 
 ```
-cpack
-sudo dpkg --install *.deb
+sudo dpkg --install build/*.deb
 sudo openjvs [optional outside mapping name]
 ```
 
