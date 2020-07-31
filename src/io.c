@@ -11,17 +11,17 @@ int analogueMax;
 int gunXMax;
 int gunYMax;
 
-JVSCapabilities *getCapabilities()
+JVSCapabilities* getCapabilities()
 {
 	return &capabilities;
 }
 
-JVSState *getState()
+JVSState* getState()
 {
 	return &state;
 }
 
-int initIO(JVSCapabilities *capabilitiesSetup)
+int initIO(JVSCapabilities* capabilitiesSetup)
 {
 	memcpy(&capabilities, capabilitiesSetup, sizeof(JVSCapabilities));
 
@@ -35,7 +35,7 @@ int initIO(JVSCapabilities *capabilitiesSetup)
 		state.rotaryChannel[rotaryChannels] = 0;
 
 	for (int player = 0; player < capabilities.coins; player++)
-		state.coinCount[player] = 1;
+		state.coinCount[player] = 90;
 
 	analogueMax = pow(2, capabilities.analogueInBits) - 1;
 	gunXMax = pow(2, capabilities.gunXBits) - 1;
@@ -103,7 +103,7 @@ int setRotary(JVSInput channel, int value)
 	return 1;
 }
 
-JVSInput jvsInputFromString(char *jvsInputString)
+JVSInput jvsInputFromString(char* jvsInputString)
 {
 	for (long unsigned int i = 0; i < sizeof(jvsInputConversion) / sizeof(jvsInputConversion[0]); i++)
 	{
@@ -114,7 +114,7 @@ JVSInput jvsInputFromString(char *jvsInputString)
 	return -1;
 }
 
-JVSPlayer jvsPlayerFromString(char *jvsPlayerString)
+JVSPlayer jvsPlayerFromString(char* jvsPlayerString)
 {
 	for (long unsigned int i = 0; i < sizeof(jvsPlayerConversion) / sizeof(jvsPlayerConversion[0]); i++)
 	{
@@ -125,7 +125,7 @@ JVSPlayer jvsPlayerFromString(char *jvsPlayerString)
 	return -1;
 }
 
-int jvsCapabilitiesFromString(JVSCapabilities *capabilities, char *jvsCapabilitiesString)
+int jvsCapabilitiesFromString(JVSCapabilities* capabilities, char* jvsCapabilitiesString)
 {
 	for (long unsigned int i = 0; i < sizeof(jvsCapabilitiesConversion) / sizeof(jvsCapabilitiesConversion[0]); i++)
 	{

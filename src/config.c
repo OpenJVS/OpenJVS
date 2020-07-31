@@ -6,9 +6,9 @@
 
 #include "io.h"
 
-char *getNextToken(char *buffer, char *seperator, char **saveptr)
+char* getNextToken(char* buffer, char* seperator, char** saveptr)
 {
-    char *token = strtok_r(buffer, seperator, saveptr);
+    char* token = strtok_r(buffer, seperator, saveptr);
     if (token == NULL)
         return NULL;
 
@@ -31,16 +31,16 @@ JVSConfig config = {
     .capabilities = SEGA_TYPE_3_IO,
 };
 
-JVSConfig *getConfig()
+JVSConfig* getConfig()
 {
     return &config;
 }
 
-JVSConfigStatus parseConfig(char *path)
+JVSConfigStatus parseConfig(char* path)
 {
-    FILE *file;
+    FILE* file;
     char buffer[MAX_LINE_LENGTH];
-    char *saveptr = NULL;
+    char* saveptr = NULL;
 
     if ((file = fopen(path, "r")) == NULL)
         return JVS_CONFIG_STATUS_FILE_NOT_FOUND;
@@ -52,7 +52,7 @@ JVSConfigStatus parseConfig(char *path)
         if (buffer[0] == '#' || buffer[0] == 0 || buffer[0] == ' ' || buffer[0] == '\r' || buffer[0] == '\n')
             continue;
 
-        char *command = getNextToken(buffer, " ", &saveptr);
+        char* command = getNextToken(buffer, " ", &saveptr);
 
         if (strcmp(command, "INCLUDE") == 0)
             parseConfig(getNextToken(NULL, " ", &saveptr));
@@ -84,11 +84,11 @@ JVSConfigStatus parseConfig(char *path)
     return JVS_CONFIG_STATUS_SUCCESS;
 }
 
-JVSConfigStatus parseInputMapping(char *path, InputMappings *inputMappings)
+JVSConfigStatus parseInputMapping(char* path, InputMappings* inputMappings)
 {
-    FILE *file;
+    FILE* file;
     char buffer[MAX_LINE_LENGTH];
-    char *saveptr = NULL;
+    char* saveptr = NULL;
 
     char gamePath[MAX_PATH_LENGTH];
     strcpy(gamePath, DEFAULT_DEVICE_MAPPING_PATH);
@@ -104,7 +104,7 @@ JVSConfigStatus parseInputMapping(char *path, InputMappings *inputMappings)
         if (buffer[0] == '#' || buffer[0] == 0 || buffer[0] == ' ' || buffer[0] == '\r' || buffer[0] == '\n')
             continue;
 
-        char *command = getNextToken(buffer, " ", &saveptr);
+        char* command = getNextToken(buffer, " ", &saveptr);
 
         if (strcmp(command, "INCLUDE") == 0)
         {
@@ -113,7 +113,7 @@ JVSConfigStatus parseInputMapping(char *path, InputMappings *inputMappings)
             if (status == JVS_CONFIG_STATUS_SUCCESS)
                 memcpy(inputMappings, &tempInputMappings, sizeof(InputMappings));
         }
-        else if (command[0] == 'K' || command[0] == 'B')
+        else if (command[0] == 'K' || command[0] == 'B' || command[0] == 'C')
         {
             int code = evDevFromString(command);
             ControllerInput input = controllerInputFromString(getNextToken(NULL, " ", &saveptr));
@@ -121,7 +121,7 @@ JVSConfigStatus parseInputMapping(char *path, InputMappings *inputMappings)
             InputMapping mapping = {
                 .type = SWITCH,
                 .code = code,
-                .input = input};
+                .input = input };
 
             inputMappings->mappings[inputMappings->length] = mapping;
             inputMappings->length++;
@@ -136,7 +136,7 @@ JVSConfigStatus parseInputMapping(char *path, InputMappings *inputMappings)
                 .type = HAT,
                 .code = code,
                 .input = input,
-                .inputSecondary = secondaryInput};
+                .inputSecondary = secondaryInput };
 
             inputMappings->mappings[inputMappings->length] = mapping;
             inputMappings->length++;
@@ -152,7 +152,7 @@ JVSConfigStatus parseInputMapping(char *path, InputMappings *inputMappings)
             };
 
             /* Check to see if we should reverse */
-            char *extra = getNextToken(NULL, " ", &saveptr);
+            char* extra = getNextToken(NULL, " ", &saveptr);
             while (extra != NULL)
             {
                 if (strcmp(extra, "REVERSE") == 0)
@@ -171,7 +171,7 @@ JVSConfigStatus parseInputMapping(char *path, InputMappings *inputMappings)
         }
         else
         {
-            printf("Error: Unknown mapping command %s\n", command);
+            printf("Error: parsing Input Mapping, Unknown mapping command %s\n", command);
         }
     }
 
@@ -180,11 +180,11 @@ JVSConfigStatus parseInputMapping(char *path, InputMappings *inputMappings)
     return JVS_CONFIG_STATUS_SUCCESS;
 }
 
-JVSConfigStatus parseOutputMapping(char *path, OutputMappings *outputMappings)
+JVSConfigStatus parseOutputMapping(char* path, OutputMappings* outputMappings)
 {
-    FILE *file;
+    FILE* file;
     char buffer[MAX_LINE_LENGTH];
-    char *saveptr = NULL;
+    char* saveptr = NULL;
 
     char gamePath[MAX_PATH_LENGTH];
     strcpy(gamePath, DEFAULT_GAME_MAPPING_PATH);
@@ -200,7 +200,7 @@ JVSConfigStatus parseOutputMapping(char *path, OutputMappings *outputMappings)
         if (buffer[0] == '#' || buffer[0] == 0 || buffer[0] == ' ' || buffer[0] == '\r' || buffer[0] == '\n')
             continue;
 
-        char *command = getNextToken(buffer, " ", &saveptr);
+        char* command = getNextToken(buffer, " ", &saveptr);
 
         if (strcmp(command, "INCLUDE") == 0)
         {
@@ -221,7 +221,7 @@ JVSConfigStatus parseOutputMapping(char *path, OutputMappings *outputMappings)
                 .input = controllerInputFromString(command),
                 .controllerPlayer = controllerPlayer,
                 .output = jvsInputFromString(getNextToken(NULL, " ", &saveptr)),
-                .jvsPlayer = jvsPlayerFromString(getNextToken(NULL, " ", &saveptr))};
+                .jvsPlayer = jvsPlayerFromString(getNextToken(NULL, " ", &saveptr)) };
             outputMappings->mappings[outputMappings->length] = mapping;
             outputMappings->length++;
         }
@@ -231,10 +231,10 @@ JVSConfigStatus parseOutputMapping(char *path, OutputMappings *outputMappings)
                 .type = ANALOGUE,
                 .input = controllerInputFromString(command),
                 .controllerPlayer = controllerPlayerFromString(getNextToken(NULL, " ", &saveptr)),
-                .output = jvsInputFromString(getNextToken(NULL, " ", &saveptr))};
+                .output = jvsInputFromString(getNextToken(NULL, " ", &saveptr)) };
 
             /* Check to see if we should reverse */
-            char *reverse = getNextToken(NULL, " ", &saveptr);
+            char* reverse = getNextToken(NULL, " ", &saveptr);
             if (reverse != NULL && strcmp(reverse, "REVERSE") == 0)
             {
                 mapping.reverse = 1;
@@ -245,7 +245,7 @@ JVSConfigStatus parseOutputMapping(char *path, OutputMappings *outputMappings)
         }
         else
         {
-            printf("Error: Unknown mapping command %s\n", command);
+            printf("Error:  parsing Output Mapping, Unknown mapping command %s\n", command);
         }
     }
 

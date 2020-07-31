@@ -32,9 +32,9 @@ struct MappingThreadArguments
     int wiiMode;
 };
 
-void *deviceThread(void *_args)
+void* deviceThread(void* _args)
 {
-    struct MappingThreadArguments *args = (struct MappingThreadArguments *)_args;
+    struct MappingThreadArguments* args = (struct MappingThreadArguments*)_args;
     char devicePath[MAX_PATH_LENGTH];
     EVInputs inputs;
     strcpy(devicePath, args->devicePath);
@@ -117,6 +117,12 @@ void *deviceThread(void *_args)
             case EV_KEY:
             {
                 setSwitch(inputs.key[event.code].jvsPlayer, inputs.key[event.code].output, event.value == 0 ? 0 : 1);
+
+
+                //Set Second assignment if defined
+                if (inputs.key[event.code].outputSecondary != 0)
+                    setSwitch(inputs.key[event.code].jvsPlayer, inputs.key[event.code].outputSecondary, event.value == 0 ? 0 : 1);
+
             }
             break;
             case EV_ABS:
@@ -215,9 +221,9 @@ void *deviceThread(void *_args)
 
     return 0;
 }
-void startThread(EVInputs *inputs, char *devicePath, int wiiMode)
+void startThread(EVInputs* inputs, char* devicePath, int wiiMode)
 {
-    struct MappingThreadArguments *args = malloc(sizeof(struct MappingThreadArguments));
+    struct MappingThreadArguments* args = malloc(sizeof(struct MappingThreadArguments));
     strcpy(args->devicePath, devicePath);
     memcpy(&args->inputs, inputs, sizeof(EVInputs));
     args->wiiMode = wiiMode;
@@ -235,7 +241,7 @@ void stopThreads()
     }
 }
 
-int evDevFromString(char *evDevString)
+int evDevFromString(char* evDevString)
 {
     for (int i = 0; i < sizeof(evDevConversion) / sizeof(evDevConversion[0]); i++)
     {
@@ -248,7 +254,7 @@ int evDevFromString(char *evDevString)
     return -1;
 }
 
-ControllerInput controllerInputFromString(char *controllerInputString)
+ControllerInput controllerInputFromString(char* controllerInputString)
 {
     for (long unsigned int i = 0; i < sizeof(controllerInputConversion) / sizeof(controllerInputConversion[0]); i++)
     {
@@ -259,7 +265,7 @@ ControllerInput controllerInputFromString(char *controllerInputString)
     return -1;
 }
 
-ControllerPlayer controllerPlayerFromString(char *controllerPlayerString)
+ControllerPlayer controllerPlayerFromString(char* controllerPlayerString)
 {
     for (long unsigned int i = 0; i < sizeof(controllerPlayerConversion) / sizeof(controllerPlayerConversion[0]); i++)
     {
@@ -270,21 +276,27 @@ ControllerPlayer controllerPlayerFromString(char *controllerPlayerString)
     return -1;
 }
 
-int processMappings(InputMappings *inputMappings, OutputMappings *outputMappings, EVInputs *evInputs, ControllerPlayer player)
+int processMappings(InputMappings* inputMappings, OutputMappings* outputMappings, EVInputs* evInputs, ControllerPlayer player)
 {
     for (int i = 0; i < inputMappings->length; i++)
     {
-        int found = 0;
+        int nbrFound = 0;
         double multiplier = 1;
         OutputMapping tempMapping;
+
         for (int j = outputMappings->length - 1; j >= 0; j--)
         {
-            if (found)
+            //Accept up to 2 output assignements
+            if (nbrFound == 2)
                 break;
 
             if (outputMappings->mappings[j].input == inputMappings->mappings[i].input && outputMappings->mappings[j].controllerPlayer == player)
             {
-                tempMapping = outputMappings->mappings[j];
+                if (nbrFound == 0)
+                    tempMapping = outputMappings->mappings[j];
+                else
+                    //If second asignment found, set it as outputSecondary (not sure it's the best place but it works :)
+                    tempMapping.outputSecondary = outputMappings->mappings[j].output;
 
                 /* Find the second mapping if needed*/
                 if (inputMappings->mappings[i].type == HAT)
@@ -296,7 +308,7 @@ int processMappings(InputMappings *inputMappings, OutputMappings *outputMappings
                         {
                             tempMapping.outputSecondary = outputMappings->mappings[p].output;
                             tempMapping.type = HAT;
-                            found = 1;
+                            nbrFound = 2;
                             break;
                         }
                     }
@@ -309,12 +321,13 @@ int processMappings(InputMappings *inputMappings, OutputMappings *outputMappings
 
                 tempMapping.reverse ^= inputMappings->mappings[i].reverse;
                 multiplier = inputMappings->mappings[i].multiplier;
-                found = 1;
-                break;
+                nbrFound++;
+
+                //break;
             }
         }
 
-        if (!found)
+        if (!nbrFound)
         {
             debug(1, "Error: no outside mapping found for %d\n", inputMappings->mappings[i].input);
             continue;
@@ -344,14 +357,14 @@ int processMappings(InputMappings *inputMappings, OutputMappings *outputMappings
     return 1;
 }
 
-int isEventDevice(const struct dirent *dir)
+int isEventDevice(const struct dirent* dir)
 {
     return strncmp("event", dir->d_name, 5) == 0;
 }
 
-int getInputs(DeviceList *deviceList)
+int getInputs(DeviceList* deviceList)
 {
-    struct dirent **namelist;
+    struct dirent** namelist;
 
     deviceList->length = 0;
 
@@ -397,7 +410,7 @@ int getInputs(DeviceList *deviceList)
     return 1;
 }
 
-int initInputs(char *outputMappingPath)
+int initInputs(char* outputMappingPath)
 {
 
     DeviceList deviceList;
@@ -423,7 +436,7 @@ int initInputs(char *outputMappingPath)
         if (parseInputMapping(deviceList.devices[i].name, &inputMappings) != JVS_CONFIG_STATUS_SUCCESS || inputMappings.length == 0)
             continue;
 
-        EVInputs evInputs = (EVInputs){0};
+        EVInputs evInputs = (EVInputs){ 0 };
 
         if (!processMappings(&inputMappings, &outputMappings, &evInputs, (ControllerPlayer)playerNumber))
         {
