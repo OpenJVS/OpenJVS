@@ -13,8 +13,11 @@ OpenJVS requires a USB RS485 dongle to communicate, and supports the following h
 - Sega Triforce
 - Sega Chihiro
 - Sega Lindbergh
+
 - Namco System 256
 - Namco System 23 / Namco System Super 23 (Time Crisis 2)
+
+- Taito Type X2
 
 On games that require a sense line, the following has to be wired up:
 
