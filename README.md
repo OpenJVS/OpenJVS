@@ -8,18 +8,33 @@ Questions can be asked in the discord channel: https://discord.gg/aJAR9N2. If it
 
 OpenJVS requires a USB RS485 dongle to communicate, and supports the following hardware:
 
-- Sega Naomi 1 (Without Sense Line)
-- Sega Naomi 2
-- Sega Triforce
-- Sega Chihiro
-- Sega Lindbergh
-
-- Namco System 256
-- Namco System 23 / Namco System Super 23 (Time Crisis 2)
-
-- Taito Type X2
+| Platform                        | Status      | Sense Line Required |
+|---------------------------------|-------------|---------------------|
+| Naomi 1                         | Working     | No                  |
+| Naomi 2                         | Working     | Yes                 |
+| Triforce                        | Not Working |                     |
+| Chihiro                         | Working     | Yes                 |
+| Lindbergh                       | Working     | Yes                 |
+| Ringedge                        | Not Working |                     |
+| Namco System 23 (Time Crisis 2) | Working     | Yes                 |
+| Namco System 256                | Working     | Yes                 |
+| Taito Type X+                   | Working     | Yes                 |
+| Taito Type X2                   | Working     | Yes                 |
 
 On games that require a sense line, the following has to be wired up:
+
+```
+
+|          GND   (BLACK) |-------------| GND           |                 |                        |
+| ARCADE   A+    (GREEN) |-------------| A+  RS485 USB |-----------------| USB  RASPBERRY PI > 1  |
+|          B-    (WHITE) |-------------| B-            |                 |                        |
+|                        |                                               |                        |
+|          SENSE (RED)   |----------+------------------------------------| GPIO 12                |
+                                    |
+                                    +---- (1kOhm Resistor or 4 Signal Dioes) ---- GND
+```
+
+A 1KOhm resistor or 4 signal diodes are known to work properly, the purpose of these is to create a 2.5 volt drop.
 
 A list of RS485 dongles and comments are below:
 
