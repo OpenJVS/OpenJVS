@@ -14,6 +14,7 @@
 #include <pthread.h>
 #include <stdbool.h>
 #include <sys/select.h>
+#include <math.h>
 
 #include "debug.h"
 #include "config.h"
@@ -30,6 +31,7 @@ struct MappingThreadArguments
     char devicePath[MAX_PATH_LENGTH];
     EVInputs inputs;
     int wiiMode;
+    int player;
 };
 
 void *deviceThread(void *_args)
@@ -40,6 +42,7 @@ void *deviceThread(void *_args)
     strcpy(devicePath, args->devicePath);
     memcpy(&inputs, &args->inputs, sizeof(EVInputs));
     int wiiMode = args->wiiMode;
+    int player = args->player;
     free(args);
 
     int fd;
@@ -165,29 +168,43 @@ void *deviceThread(void *_args)
                     if (x0 != 1023 && x1 != 1023 && y0 != 1023 && y1 != 1023)
                     {
                         /* Set screen in player 1 */
-                        setSwitch(PLAYER_1, BUTTON_2, 0);
-                        int middlex = (int)((double)(x0 + x1) / 2.0);
-                        int middley = (int)((double)(y0 + y1) / 2.0);
+                        setSwitch(player + 1, BUTTON_2, 0);
+                        int oneX, oneY, twoX, twoY;
+                        if (x0 > x1)
+                        {
+                            oneY = y0;
+                            oneX = x0;
+                            twoY = y1;
+                            twoX = x1;
+                        }
+                        else
+                        {
+                            oneY = y1;
+                            oneX = x1;
+                            twoY = y0;
+                            twoX = x0;
+                        }
 
-                        int valuex = 1023 - middlex;
-                        int valuey = middley;
+                        /* Use some fancy maths that I don't understand fully */
+                        double valuex = 512 + cos(atan2(twoY - oneY, twoX - oneX) * -1) * (((oneX - twoX) / 2 + twoX) - 512) - sin(atan2(twoY - oneY, twoX - oneX) * -1) * (((oneY - twoY) / 2 + twoY) - 384);
+                        double valuey = 384 + sin(atan2(twoY - oneY, twoX - oneX) * -1) * (((oneX - twoX) / 2 + twoX) - 512) + cos(atan2(twoY - oneY, twoX - oneX) * -1) * (((oneY - twoY) / 2 + twoY) - 384);
 
                         double finalX = (((double)valuex / (double)1023) * 1.0);
                         double finalY = (((double)valuey / (double)1023) * 1.0);
 
-                        setAnalogue(0, finalX);
-                        setAnalogue(1, finalY);
-                        setGun(0, finalX);
-                        setGun(1, finalY);
+                        setAnalogue(0 + (2 * player), finalX);
+                        setAnalogue(1 + (2 * player), finalY);
+                        setGun(0 + (2 * player), finalX);
+                        setGun(1 + (2 * player), finalY);
                     }
                     else
                     {
                         /* Set screen out player 1 */
-                        setSwitch(PLAYER_1, BUTTON_2, 1);
-                        setAnalogue(0, 0);
-                        setAnalogue(1, 0);
-                        setGun(0, 0);
-                        setGun(1, 0);
+                        setSwitch(player + 1, BUTTON_2, 1);
+                        setAnalogue(0 + (2 * player), 0);
+                        setAnalogue(1 + (2 * player), 0);
+                        setGun(0 + (2 * player), 0);
+                        setGun(1 + (2 * player), 0);
                     }
                     continue;
                 }
@@ -214,12 +231,13 @@ void *deviceThread(void *_args)
 
     return 0;
 }
-void startThread(EVInputs *inputs, char *devicePath, int wiiMode)
+void startThread(EVInputs *inputs, char *devicePath, int wiiMode, int player)
 {
     struct MappingThreadArguments *args = malloc(sizeof(struct MappingThreadArguments));
     strcpy(args->devicePath, devicePath);
     memcpy(&args->inputs, inputs, sizeof(EVInputs));
     args->wiiMode = wiiMode;
+    args->player = player;
     pthread_create(&threadID[threadCount], NULL, deviceThread, args);
     threadCount++;
 }
@@ -433,10 +451,10 @@ int initInputs(char *outputMappingPath)
             /* Start the one before it in wii mode (event-1 is usually the ir)*/
             if (strcmp(deviceList.devices[i].name, "nintendo-wii-remote") == 0)
             {
-                startThread(&evInputs, deviceList.devices[i - 1].path, 1);
+                startThread(&evInputs, deviceList.devices[i - 1].path, 1, playerNumber);
             }
 
-            startThread(&evInputs, deviceList.devices[i].path, 0);
+            startThread(&evInputs, deviceList.devices[i].path, 0, playerNumber);
             debug(0, "  Player %d:\t\t%s\n", playerNumber, deviceList.devices[i].fullName);
             playerNumber++;
         }

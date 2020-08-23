@@ -113,7 +113,7 @@ JVSConfigStatus parseInputMapping(char *path, InputMappings *inputMappings)
             if (status == JVS_CONFIG_STATUS_SUCCESS)
                 memcpy(inputMappings, &tempInputMappings, sizeof(InputMappings));
         }
-        else if (command[0] == 'K' || command[0] == 'B')
+        else if (command[0] == 'K' || command[0] == 'B' || command[0] == 'C')
         {
             int code = evDevFromString(command);
             ControllerInput input = controllerInputFromString(getNextToken(NULL, " ", &saveptr));
