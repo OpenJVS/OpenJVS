@@ -204,7 +204,7 @@ void *deviceThread(void *_args)
                         double valuey = 384 + sin(atan2(twoY - oneY, twoX - oneX) * -1) * (((oneX - twoX) / 2 + twoX) - 512) + cos(atan2(twoY - oneY, twoX - oneX) * -1) * (((oneY - twoY) / 2 + twoY) - 384);
 
                         double finalX = (((double)valuex / (double)1023) * 1.0);
-                        double finalY = (((double)valuey / (double)1023) * 1.0);
+                        double finalY = 1023 - (((double)valuey / (double)1023) * 1.0);
 
                         setAnalogue(0 + (2 * (player - 1)), finalX);
                         setAnalogue(1 + (2 * (player - 1)), finalY);
