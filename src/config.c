@@ -226,7 +226,17 @@ JVSConfigStatus parseOutputMapping(char *path, OutputMappings *outputMappings)
                 .input = controllerInputFromString(command),
                 .controllerPlayer = controllerPlayer,
                 .output = jvsInputFromString(getNextToken(NULL, " ", &saveptr)),
+                .outputSecondary = NONE,
                 .jvsPlayer = jvsPlayerFromString(getNextToken(NULL, " ", &saveptr))};
+
+            /* Check to see if we have a secondary output */
+            char *secondaryOutput = getNextToken(NULL, " ", &saveptr);
+            if (secondaryOutput != NULL)
+            {
+                printf("Adding secondary output\n");
+                mapping.outputSecondary = jvsInputFromString(secondaryOutput);
+            }
+
             outputMappings->mappings[outputMappings->length] = mapping;
             outputMappings->length++;
         }

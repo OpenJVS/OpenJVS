@@ -52,7 +52,10 @@ typedef enum
     ROTARY_8 = 7,
     ROTARY_9 = 8,
     ROTARY_10 = 9,
-    COIN = 999,
+
+    /* Things that aren't actually doable */
+    COIN = 98,
+    NONE = 99,
 } JVSInput;
 
 static const struct

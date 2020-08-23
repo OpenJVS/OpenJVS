@@ -127,6 +127,11 @@ void *deviceThread(void *_args)
                 else
                 {
                     setSwitch(inputs.key[event.code].jvsPlayer, inputs.key[event.code].output, event.value == 0 ? 0 : 1);
+
+                    if (inputs.key[event.code].outputSecondary != NONE)
+                    {
+                        setSwitch(inputs.key[event.code].jvsPlayer, inputs.key[event.code].outputSecondary, event.value == 0 ? 0 : 1);
+                    }
                 }
             }
             break;
