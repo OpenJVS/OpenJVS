@@ -121,7 +121,7 @@ ABS_RZ CONTROLLER_ANALOGUE_L SENSITIVITY 0.9
 ABS_HAT0X CONTROLLER_BUTTON_LEFT CONTROLLER_BUTTON_RIGHT
 ```
 
-As above you can map the HAT controls which are sometimes used for DPADS. This should take controller button outputs on a single line.
+As above you can map the HAT controls which are sometimes used for DPADS. This should take controller button outputs on a single line. This can map any analogue channel into a digital one so analogue hats as well as thumb sticks can be converted into digitals!
 
 FROM keywords are selected from the list of linux input event keywords. These are the same as the ones shown when you run `sudo evtest`. TO keywords are selected from the pre defined virtual controller mapping keywords list. Below is the virtual controller that the mapping is based upon, along with the mapping keywords used to reference this controller.
 
@@ -187,6 +187,7 @@ Files for mapping your own controller to this virtual controller live in `/etc/o
 This file will be selected using the `DEFAULT_MAPPING` config keyword, or by a parameter passed to the program `sudo openjvs outrun2`.
 
 The file consists of multiple lines with a `CONTROLLER_INPUT CONTROLLER_PLAYER ARCADE_INPUT ARCADE_PLAYER` mapping as shown below. Note `REVERSE` can be added to the end of a line to reverse the direction of the input.
+Note a secondary `BUTTON_*` can be added to the end of the line as a secondary output which will be enabled with the first. This allows the emulating of H shifters in games like Wangan Midnight Maximum Tune.
 
 ```
 # Example Mapping File
@@ -267,10 +268,7 @@ As well as this the IO that should be emulated can be specified in the map file 
 ```
 IO TO EMULATE
 -------------
-SEGA_TYPE_1_IO // Not yet done
-SEGA_TYPE_2_IO // Not yet done
 SEGA_TYPE_3_IO
 NAMCO_JYU_IO
-NAMCO_FCA_IO // Not yet done
-OPENJVS_MEGA_IO // Not Yet Done
+NAMCO_V185_IO
 ```
