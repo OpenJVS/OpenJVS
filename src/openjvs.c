@@ -107,6 +107,11 @@ void handleSignal(int signal)
 
 int handleArguments(int argc, char **argv)
 {
+  if (argc < 1)
+  {
+    debug(0, "Error: No arguments were passed to the handleArguments() function\n");
+    return EXIT_FAILURE;
+  }
   if (strcmp(argv[1], "--version") == 0)
   {
     debug(0, "Written by: Bobby Dilley, RedOne and debugged by the team!\n");

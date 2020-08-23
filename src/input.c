@@ -64,7 +64,6 @@ void *deviceThread(void *_args)
         perror("evdev ioctl");
     }
 
-    double min = 0, max = 0;
     for (axisIndex = 0; axisIndex < ABS_MAX; ++axisIndex)
     {
         if (test_bit(axisIndex, absoluteBitmask))
@@ -237,7 +236,7 @@ void stopThreads()
 
 int evDevFromString(char *evDevString)
 {
-    for (int i = 0; i < sizeof(evDevConversion) / sizeof(evDevConversion[0]); i++)
+    for (long unsigned int i = 0; i < sizeof(evDevConversion) / sizeof(evDevConversion[0]); i++)
     {
         if (strcmp(evDevConversion[i].string, evDevString) == 0)
         {
