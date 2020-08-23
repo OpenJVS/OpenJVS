@@ -206,19 +206,19 @@ void *deviceThread(void *_args)
                         double finalX = (((double)valuex / (double)1023) * 1.0);
                         double finalY = (((double)valuey / (double)1023) * 1.0);
 
-                        setAnalogue(0 + (2 * player), finalX);
-                        setAnalogue(1 + (2 * player), finalY);
-                        setGun(0 + (2 * player), finalX);
-                        setGun(1 + (2 * player), finalY);
+                        setAnalogue(0 + (2 * (player - 1)), finalX);
+                        setAnalogue(1 + (2 * (player - 1)), finalY);
+                        setGun(0 + (2 * (player - 1)), finalX);
+                        setGun(1 + (2 * (player - 1)), finalY);
                     }
                     else
                     {
                         /* Set screen out player 1 */
                         setSwitch(player + 1, BUTTON_2, 1);
-                        setAnalogue(0 + (2 * player), 0);
-                        setAnalogue(1 + (2 * player), 0);
-                        setGun(0 + (2 * player), 0);
-                        setGun(1 + (2 * player), 0);
+                        setAnalogue(0 + (2 * (player - 1)), 0);
+                        setAnalogue(1 + (2 * (player - 1)), 0);
+                        setGun(0 + (2 * (player - 1)), 0);
+                        setGun(1 + (2 * (player - 1)), 0);
                     }
                     continue;
                 }
