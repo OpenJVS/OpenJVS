@@ -30,6 +30,11 @@ install(TARGETS ${PROJECT_NAME}
 		LIBRARY DESTINATION "lib/"
 )
 
+install(FILES ${CMAKE_SOURCE_DIR}/docs/openjvs.service
+		COMPONENT ${PROJECT_NAME}
+		DESTINATION "/etc/systemd/system/"
+)
+
 install(DIRECTORY ${CMAKE_SOURCE_DIR}/docs/openjvs
 		COMPONENT ${PROJECT_NAME}
 		DESTINATION "/etc/"

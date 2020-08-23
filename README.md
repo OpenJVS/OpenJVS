@@ -12,10 +12,10 @@ OpenJVS requires a USB RS485 dongle to communicate, and supports the following h
 |---------------------------------|-------------|---------------------|
 | Naomi 1                         | Working     | No                  |
 | Naomi 2                         | Working     | Yes                 |
-| Triforce                        | Not Working |                     |
+| Triforce                        | Mostly      | Yes                 |
 | Chihiro                         | Working     | Yes                 |
 | Lindbergh                       | Working     | Yes                 |
-| Ringedge                        | Not Working |                     |
+| Ringedge                        | No          |                     |
 | Namco System 23 (Time Crisis 2) | Working     | Yes                 |
 | Namco System 256                | Working     | Yes                 |
 | Taito Type X+                   | Working     | Yes                 |
