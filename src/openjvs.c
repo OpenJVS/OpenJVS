@@ -19,7 +19,7 @@ int main(int argc, char **argv)
 {
   signal(SIGINT, handleSignal);
 
-  printf("OpenJVS (Version 3.2.0)\n\n");
+  printf("OpenJVS (Version 3.3)\n\n");
 
   /* Read the initial config */
   if (parseConfig(DEFAULT_CONFIG_PATH) != JVS_CONFIG_STATUS_SUCCESS)
@@ -79,7 +79,7 @@ int main(int argc, char **argv)
       debug(0, "Error: A write failure occoured\n");
       break;
     case JVS_STATUS_ERROR:
-      debug(0, "Error: A generic error happened\n");
+      debug(0, "Error: A generic error occoured\n");
       break;
     default:
       break;
@@ -89,7 +89,7 @@ int main(int argc, char **argv)
   /* Close the file pointer */
   if (!disconnectJVS())
   {
-    debug(0, "Error: Couldn't disconnect from serial\n");
+    debug(0, "Error: Could not disconnect from serial\n");
     return EXIT_FAILURE;
   }
 
