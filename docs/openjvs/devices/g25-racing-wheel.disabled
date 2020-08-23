@@ -1,0 +1,68 @@
+###############################################################
+#   OpenJVS: Logitech G25 mapping file
+#   ---------+--------------------+----------------
+#   Version  |    Date            | Description
+#   ---------+--------------------+----------------
+#     0.1    | 14th of April 2020 | initial version for OpenJVS3.0
+#     0.2    | 4th of June 2020   | adapted mapping in accordance with new openJVS version for OpenJVS 3.2.0
+#   ---------+--------------------+----------------
+###############################################################
+
+# ======================================
+# STEERING WHEELS AND PEDALS CONTROL SET
+# ======================================
+# Steering Wheel:
+# ---------------
+ABS_X CONTROLLER_ANALOGUE_X
+
+# Pedals (Accelerator, break, clutch):
+# ------------------------------------
+ABS_Z CONTROLLER_ANALOGUE_R REVERSE
+ABS_RZ CONTROLLER_ANALOGUE_L REVERSE
+# ABS_Y
+
+# 2 red buttons on the wheel (left to right):
+# -------------------------------------------
+BTN_BASE2 CONTROLLER_BUTTON_DOWN
+BTN_BASE CONTROLLER_BUTTON_START
+
+# 2 gearshifts on the wheel (left to right):
+# ------------------------------------------
+BTN_PINKIE CONTROLLER_BUTTON_LEFT_BUMPER
+BTN_TOP2 CONTROLLER_BUTTON_RIGHT_BUMPER
+
+# ================
+# GEAR CONTROL SET
+# ================
+# 4 black buttons cross-aligned on top (clockwise):
+# --------------------------------------------------
+BTN_TOP CONTROLLER_BUTTON_TEST
+BTN_THUMB2 CONTROLLER_BUTTON_SERVICE
+BTN_TRIGGER CONTROLLER_BUTTON_COIN
+# BTN_THUMB
+
+# D-PAD in the middle:
+# --------------------
+ABS_HAT0X CONTROLLER_BUTTON_LEFT CONTROLLER_BUTTON_RIGHT
+ABS_HAT0Y CONTROLLER_BUTTON_UP CONTROLLER_BUTTON_DOWN
+
+# 4 red buttons aligned horizontally (left to right):
+# ---------------------------------------------------
+BTN_BASE6 CONTROLLER_BUTTON_A
+BTN_BASE3 CONTROLLER_BUTTON_B
+BTN_BASE4 CONTROLLER_BUTTON_C
+BTN_BASE5 CONTROLLER_BUTTON_D
+
+# GEAR MAPPING (1 to 6 + R):
+# --------------------------
+CODE_300 CONTROLLER_BUTTON_E
+CODE_301 CONTROLLER_BUTTON_F
+CODE_302 CONTROLLER_BUTTON_RIGHT_BUMPER
+CODE_303 CONTROLLER_BUTTON_LEFT_BUMPER
+CODE_704 CONTROLLER_BUTTON_G
+CODE_705 CONTROLLER_BUTTON_H
+CODE_706 CONTROLLER_BUTTON_I
+
+
+
+

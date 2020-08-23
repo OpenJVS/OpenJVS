@@ -52,6 +52,7 @@ typedef enum
     ROTARY_8 = 7,
     ROTARY_9 = 8,
     ROTARY_10 = 9,
+    COIN = 999,
 } JVSInput;
 
 static const struct
@@ -103,6 +104,7 @@ static const struct
     {"ROTARY_8", ROTARY_8},
     {"ROTARY_9", ROTARY_9},
     {"ROTARY_10", ROTARY_10},
+    {"COIN", COIN},
 };
 
 typedef enum
@@ -160,6 +162,7 @@ typedef struct
     unsigned char displayOutColumns;
     unsigned char displayOutEncodings;
     unsigned char backup;
+    unsigned char rightAlignBits;
     char *displayName;
 } JVSCapabilities;
 
@@ -175,6 +178,7 @@ static const JVSCapabilities SEGA_TYPE_3_IO = {
     .analogueInChannels = 8,
     .generalPurposeOutputs = 20,
     .coins = 2,
+    .rightAlignBits = 0,
     .displayName = "Sega Type 3 IO"};
 
 static const JVSCapabilities SEGA_TYPE_1_IO;
@@ -191,7 +195,23 @@ static const JVSCapabilities NAMCO_JYU_IO = {
     .gunChannels = 2,
     .gunXBits = 16,
     .gunYBits = 16,
+    .rightAlignBits = 0,
     .displayName = "Namco JYU IO"};
+
+static const JVSCapabilities NAMCO_V185_IO = {
+    .name = "namco ltd.;TSS-I/O;Ver2.02;JPN,GUN-EXTENTION",
+    .players = 1,
+    .switches = 12,
+    .commandVersion = 0x11,
+    .jvsVersion = 0x20,
+    .commsVersion = 0x10,
+    .coins = 1,
+    .generalPurposeOutputs = 3,
+    .gunChannels = 1,
+    .gunXBits = 10, // Should be 16
+    .gunYBits = 8,  // Should be 16
+    .rightAlignBits = 1,
+    .displayName = "Namco V185 IO (Time Crisis 2)"};
 
 static const struct
 {
@@ -199,7 +219,8 @@ static const struct
     const JVSCapabilities capabilities;
 } jvsCapabilitiesConversion[] = {
     {"SEGA_TYPE_3_IO", SEGA_TYPE_3_IO},
-    {"NAMCO_JYU_IO", NAMCO_JYU_IO}};
+    {"NAMCO_JYU_IO", NAMCO_JYU_IO},
+    {"NAMCO_V185_IO", NAMCO_V185_IO}};
 
 JVSCapabilities *getCapabilities();
 JVSState *getState();

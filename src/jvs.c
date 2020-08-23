@@ -19,6 +19,9 @@ JVSPacket inputPacket, outputPacket;
 /* The in and out buffer used to read and write to and from */
 unsigned char outputBuffer[JVS_MAX_PACKET_SIZE], inputBuffer[JVS_MAX_PACKET_SIZE];
 
+/* Variables to store bit alignment */
+int analogueRestBits, gunXRestBits, gunYRestBits;
+
 /**
  * Initialise the JVS emulation
  *
@@ -43,6 +46,13 @@ int initJVS(char *devicePath, const JVSCapabilities *capabilitiesSetup)
 	/* Init the Virtual IO */
 	if (!initIO((JVSCapabilities *)capabilitiesSetup))
 		return 0;
+
+	/* Calculate the alignments for analogue and gun channels, default is left */
+	if(!localCapabilities->rightAlignBits) {
+        analogueRestBits = 16 - localCapabilities->analogueInBits;
+        gunXRestBits = 16 - localCapabilities->gunXBits;
+        gunYRestBits = 16 - localCapabilities->gunYBits;
+	}
 
 	/* Float the sense line ready for connection */
 	setSenseLine(0);
@@ -216,6 +226,7 @@ JVSStatus processPacket()
 		}
 		break;
 
+		/* Asks for version information */
 		case CMD_COMMAND_VERSION:
 		{
 			debug(1, "CMD_COMMAND_VERSION\n");
@@ -225,6 +236,7 @@ JVSStatus processPacket()
 		}
 		break;
 
+		/* Asks for version information */
 		case CMD_JVS_VERSION:
 		{
 			debug(1, "CMD_JVS_VERSION\n");
@@ -234,6 +246,7 @@ JVSStatus processPacket()
 		}
 		break;
 
+		/* Asks for version information */
 		case CMD_COMMS_VERSION:
 		{
 			debug(1, "CMD_COMMS_VERSION\n");
@@ -243,6 +256,7 @@ JVSStatus processPacket()
 		}
 		break;
 
+		/* Asks what our IO board supports */
 		case CMD_CAPABILITIES:
 		{
 			debug(1, "CMD_CAPABILITIES\n");
@@ -250,6 +264,7 @@ JVSStatus processPacket()
 		}
 		break;
 
+		/* Asks for the status of our IO boards switches */
 		case CMD_READ_SWITCHES:
 		{
 			debug(1, "CMD_READ_SWITCHES\n");
@@ -287,14 +302,13 @@ JVSStatus processPacket()
 		{
 			debug(1, "CMD_READ_ANALOGS\n");
 			size = 2;
-			int restBits = 16 - localCapabilities->analogueInBits;
 
 			outputPacket.data[outputPacket.length++] = REPORT_SUCCESS;
 
 			for (int i = 0; i < inputPacket.data[index + 1]; i++)
 			{
-				/* Data must be "left aligned" */
-				int analogueData = localState->analogueChannel[i] << restBits;
+				/* By default left align the data */
+				int analogueData = localState->analogueChannel[i] << analogueRestBits;
 				outputPacket.data[outputPacket.length] = analogueData >> 8;
 				outputPacket.data[outputPacket.length + 1] = analogueData;
 				outputPacket.length += 2;
@@ -457,8 +471,8 @@ JVSStatus processPacket()
 			debug(1, "CMD_READ_LIGHTGUN\n");
 			size = 2;
 
-			int analogueXData = localState->gunChannel[0] << (16 - localCapabilities->gunXBits);
-			int analogueYData = localState->gunChannel[1] << (16 - localCapabilities->gunYBits);
+			int analogueXData = localState->gunChannel[0] << gunXRestBits;
+			int analogueYData = localState->gunChannel[1] << gunYRestBits;
 			outputPacket.data[outputPacket.length] = REPORT_SUCCESS;
 			outputPacket.data[outputPacket.length + 1] = analogueXData >> 8;
 			outputPacket.data[outputPacket.length + 2] = analogueXData;
@@ -471,13 +485,9 @@ JVSStatus processPacket()
 		default:
 		{
 			if (inputPacket.data[index] == CMD_NAMCO_SPECIFIC)
-				debug(1, "CMD_NAMCO_SPECIFIC (Command shown below)\n");
+				debug(0, "CMD_NAMCO_SPECIFIC (Command shown below)\n");
 
 			debug(0, "CMD_UNSUPPORTED (Unsupported command [0x%02hhX])\n", inputPacket.data[index]);
-			/*outputPacket.length = 1;
-			outputPacket.data[0] = STATUS_UNSUPPORTED;
-			writePacket(&outputPacket);
-			return JVS_STATUS_ERROR_UNSUPPORTED_COMMAND;*/
 		}
 		}
 		index += size;

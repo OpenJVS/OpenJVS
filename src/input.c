@@ -118,7 +118,16 @@ void *deviceThread(void *_args)
 
             case EV_KEY:
             {
-                setSwitch(inputs.key[event.code].jvsPlayer, inputs.key[event.code].output, event.value == 0 ? 0 : 1);
+                /* Check if the coin button has been pressed */
+                if (inputs.key[event.code].output == COIN)
+                {
+                    if (event.value == 1)
+                        incrementCoin(inputs.key[event.code].jvsPlayer);
+                }
+                else
+                {
+                    setSwitch(inputs.key[event.code].jvsPlayer, inputs.key[event.code].output, event.value == 0 ? 0 : 1);
+                }
             }
             break;
             case EV_ABS:

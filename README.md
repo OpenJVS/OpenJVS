@@ -50,13 +50,7 @@ To install OpenJVS follow the instructions below to install the required package
 sudo apt install git cmake
 git clone https://github.com/OpenJVS/OpenJVS
 cd OpenJVS
-./build.sh
-```
-
-You will then want to make sure you have the sense line config setup. If you're using anything other than a Naomi 1, you'll need to edit `/etc/openjvs/config` and set:
-
-```
-SENSE_LINE_TYPE 1
+make
 ```
 
 To run locally (from inside the root directory):
@@ -68,7 +62,7 @@ sudo ./build/openjvs [optional outside mapping name]
 To install for globally and run (from inside the root directory):
 
 ```
-sudo dpkg --install build/*.deb
+sudo make install
 sudo openjvs [optional outside mapping name]
 ```
 
