@@ -3,7 +3,7 @@
 BUILD = build
 
 default: $(BUILD)/Makefile
-	@cd $(BUILD) && $(MAKE)
+	@cd $(BUILD) && $(MAKE) --no-print-directory
 
 install: default
 	@cd $(BUILD) && cpack
