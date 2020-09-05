@@ -114,7 +114,7 @@ int handleArguments(int argc, char **argv)
   }
   if (strcmp(argv[1], "--version") == 0)
   {
-    debug(0, "Written by: Bobby Dilley, RedOne and debugged by the team!\n");
+    debug(0, "Written by: Bobby Dilley, RedOne, Fredobedo, lsylsy2 and debugged by the team!\n");
     return EXIT_SUCCESS;
   }
   else if (strcmp(argv[1], "--enable") == 0)
