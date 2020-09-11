@@ -47,7 +47,7 @@ int main(int argc, char **argv)
   debug(0, "You are currently emulating a \033[0;31m%s\033[0m on %s.\n\n", localConfig->capabilities.displayName, localConfig->devicePath);
   debug(0, "  Output:\t\t%s\n", localConfig->defaultGamePath);
 
-  if (!initInputs(localConfig->defaultGamePath))
+  if (initInputs(localConfig->defaultGamePath))
   {
     debug(0, "Error: Could not initialise the inputs - make sure you are root\n");
     debug(0, "Try running `sudo openjvs --list` to see the devices\n");

@@ -48,7 +48,7 @@ int setSwitch(JVSPlayer player, JVSInput switchNumber, int value)
 {
 	if (player > capabilities.players)
 	{
-		printf("Error: That player does not exist.\n");
+		printf("Error: That player %d does not exist.\n", player);
 		return 0;
 	}
 

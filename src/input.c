@@ -182,7 +182,7 @@ void *deviceThread(void *_args)
                     if (x0 != 1023 && x1 != 1023 && y0 != 1023 && y1 != 1023)
                     {
                         /* Set screen in player 1 */
-                        setSwitch(player + 1, BUTTON_2, 0);
+                        setSwitch(player, BUTTON_2, 0);
                         int oneX, oneY, twoX, twoY;
                         if (x0 > x1)
                         {
@@ -214,7 +214,7 @@ void *deviceThread(void *_args)
                     else
                     {
                         /* Set screen out player 1 */
-                        setSwitch(player + 1, BUTTON_2, 1);
+                        setSwitch(player, BUTTON_2, 1);
                         setAnalogue(0 + (2 * (player - 1)), 0);
                         setAnalogue(1 + (2 * (player - 1)), 0);
                         setGun(0 + (2 * (player - 1)), 0);
@@ -428,51 +428,185 @@ int getInputs(DeviceList *deviceList)
     return 1;
 }
 
+static int initInputsWiimote(int *playerNumber, DeviceList *deviceList, OutputMappings *outputMappings)
+{
+    /* Look for wiimote devices */
+    int error = 0;
+    int idx_ir = -1;
+    int idx_controls = -1;
+
+    if (playerNumber == NULL)
+    {
+        error = -1;
+    }
+
+    if (error == 0)
+    {
+        if (deviceList == NULL)
+        {
+            error = -1;
+        }
+    }
+
+    if (error == 0)
+    {
+        if (outputMappings == NULL)
+        {
+            error = -1;
+        }
+    }
+
+    if (error == 0)
+    {
+        for (int i = 0; i < deviceList->length; i++)
+        {
+            InputMappings inputMappings;
+            inputMappings.length = 0;
+
+            EVInputs evInputs = (EVInputs){0};
+
+            if (NULL == strstr(deviceList->devices[i].name, WIIMOTE_DEVICE_NAME))
+            {
+                continue;
+            }
+
+            if (strcmp(deviceList->devices[i].name, WIIMOTE_DEVICE_NAME_IR) == 0)
+            {
+                idx_ir = i;
+            }
+
+            if (strcmp(deviceList->devices[i].name, WIIMOTE_DEVICE_NAME) == 0)
+            {
+                idx_controls = i;
+            }
+
+            if ((idx_ir != -1) && (idx_controls != -1))
+            {
+                bool failed = false;
+
+                if (parseInputMapping(deviceList->devices[idx_controls].name, &inputMappings) != JVS_CONFIG_STATUS_SUCCESS || inputMappings.length == 0)
+                {
+                    failed = true;
+                    printf("parseInputMapping was not successfully!\n");
+                }
+
+                if (!failed)
+                {
+                    if (!processMappings(&inputMappings, outputMappings, &evInputs, (ControllerPlayer)*playerNumber))
+                    {
+                        failed = true;
+                        printf("Failed to process the mapping for %s\n", deviceList->devices[idx_controls].name);
+                    }
+                }
+
+                if (!failed)
+                {
+                    startThread(&evInputs, deviceList->devices[idx_ir].path, 1, *playerNumber);
+                    startThread(&evInputs, deviceList->devices[idx_controls].path, 0, *playerNumber);
+
+                    debug(0, "  Player %d:\t\t%s\n", *playerNumber, deviceList->devices[i].fullName);
+
+                    (*playerNumber)++;
+                }
+                idx_ir = idx_controls = -1;
+            }
+        }
+    }
+    return error;
+}
+
+static int initInputsNormalMapped(int *playerNumber, DeviceList *deviceList, OutputMappings *outputMappings)
+{
+    /* Look for all non-wiimote devices */
+
+    int error = 0;
+
+    if (playerNumber == NULL)
+    {
+        error = -1;
+    }
+
+    if (error == 0)
+    {
+        if (deviceList == NULL)
+        {
+            error = -1;
+        }
+    }
+
+    if (error == 0)
+    {
+        if (outputMappings == NULL)
+        {
+            error = -1;
+        }
+    }
+
+    if (error == 0)
+    {
+        for (int i = 0; i < deviceList->length; i++)
+        {
+            InputMappings inputMappings;
+            inputMappings.length = 0;
+
+            EVInputs evInputs = (EVInputs){0};
+
+            if (NULL != strstr(deviceList->devices[i].name, WIIMOTE_DEVICE_NAME))
+            {
+                continue;
+            }
+
+            if (parseInputMapping(deviceList->devices[i].name, &inputMappings) != JVS_CONFIG_STATUS_SUCCESS || inputMappings.length == 0)
+                continue;
+
+            if (!processMappings(&inputMappings, outputMappings, &evInputs, (ControllerPlayer)*playerNumber))
+            {
+                printf("Failed to process the mapping for %s\n", deviceList->devices[i].name);
+            }
+            else
+            {
+                startThread(&evInputs, deviceList->devices[i].path, 0, *playerNumber);
+                debug(0, "  Player %d:\t\t%s\n", *playerNumber, deviceList->devices[i].fullName);
+                (*playerNumber)++;
+            }
+        }
+    }
+    return error;
+}
+
 int initInputs(char *outputMappingPath)
 {
-
+    int retval = 0;
+    int playerNumber = 1;
     DeviceList deviceList;
+    OutputMappings outputMappings;
+
     if (!getInputs(&deviceList))
     {
         debug(0, "Error: Failed to open devices\n");
-        return 0;
+        retval = -1;
     }
 
-    OutputMappings outputMappings;
-    if (parseOutputMapping(outputMappingPath, &outputMappings) != JVS_CONFIG_STATUS_SUCCESS)
+    if (retval == 0)
     {
-        debug(0, "Error: Cannot find an output mapping\n");
-        return 0;
-    }
-
-    int playerNumber = 1;
-    for (int i = 0; i < deviceList.length; i++)
-    {
-        InputMappings inputMappings;
-        inputMappings.length = 0;
-
-        if (parseInputMapping(deviceList.devices[i].name, &inputMappings) != JVS_CONFIG_STATUS_SUCCESS || inputMappings.length == 0)
-            continue;
-
-        EVInputs evInputs = (EVInputs){0};
-
-        if (!processMappings(&inputMappings, &outputMappings, &evInputs, (ControllerPlayer)playerNumber))
+        if (parseOutputMapping(outputMappingPath, &outputMappings) != JVS_CONFIG_STATUS_SUCCESS)
         {
-            debug(0, "Failed to process the mapping for %s\n", deviceList.devices[i].name);
-        }
-        else
-        {
-            /* Start the one before it in wii mode (event-1 is usually the ir)*/
-            if (strcmp(deviceList.devices[i].name, "nintendo-wii-remote") == 0)
-            {
-                startThread(&evInputs, deviceList.devices[i - 1].path, 1, playerNumber);
-            }
-
-            startThread(&evInputs, deviceList.devices[i].path, 0, playerNumber);
-            debug(0, "  Player %d:\t\t%s\n", playerNumber, deviceList.devices[i].fullName);
-            playerNumber++;
+            debug(0, "Error: Cannot find an output mapping\n");
+            retval = -1;
         }
     }
 
-    return 1;
+    if (retval == 0)
+    {
+        /* Look for all non-wiimote devices */
+        retval = initInputsNormalMapped(&playerNumber, &deviceList, &outputMappings);
+    }
+
+    if (retval == 0)
+    {
+        /* Look for wiimote devices */
+        retval = initInputsWiimote(&playerNumber, &deviceList, &outputMappings);
+    }
+
+    return retval;
 }
