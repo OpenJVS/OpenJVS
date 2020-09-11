@@ -402,7 +402,7 @@ JVSStatus processPacket()
 		case CMD_WRITE_ANALOG:
 		{
 			debug(1, "CMD_WRITE_ANALOG\n");
-			size = inputPacket.data[index + 1] + 2;
+			size = inputPacket.data[index + 1] * 2 + 2;
 			outputPacket.data[outputPacket.length++] = REPORT_SUCCESS;
 		}
 		break;
