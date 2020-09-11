@@ -5,12 +5,14 @@
 
 #include "io.h"
 
+#define WIIMOTE_DEVICE_NAME "nintendo-wii-remote"
+#define WIIMOTE_DEVICE_NAME_IR "nintendo-wii-remote-ir"
 #define MAX_MAPPING 1024
 #define MAX_PATH 1024
 #define MAX_DEVICES 255
 #define MAX_EV_ITEMS 1024
 
-typedef struct
+    typedef struct
 {
     char name[MAX_PATH];
     char path[MAX_PATH];
