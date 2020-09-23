@@ -160,6 +160,7 @@ void *deviceThread(void *_args)
                 /* Handle the wii remotes differently */
                 if (wiiMode)
                 {
+                    bool outOfBounds = true;
                     if (event.type == EV_ABS)
                     {
                         switch (event.code)
@@ -179,7 +180,7 @@ void *deviceThread(void *_args)
                         }
                     }
 
-                    if (x0 != 1023 && x1 != 1023 && y0 != 1023 && y1 != 1023)
+                    if ((x0 != 1023) && (x1 != 1023) && (y0 != 1023) && (y1 != 1023))
                     {
                         /* Set screen in player 1 */
                         setSwitch(player, BUTTON_2, 0);
@@ -204,21 +205,32 @@ void *deviceThread(void *_args)
                         double valuey = 384 + sin(atan2(twoY - oneY, twoX - oneX) * -1) * (((oneX - twoX) / 2 + twoX) - 512) + cos(atan2(twoY - oneY, twoX - oneX) * -1) * (((oneY - twoY) / 2 + twoY) - 384);
 
                         double finalX = (((double)valuex / (double)1023) * 1.0);
-                        double finalY = 1023 - (((double)valuey / (double)1023) * 1.0);
+                        double finalY = 1.0f - ((double)valuey / (double)1023);
 
-                        setAnalogue(0 + (2 * (player - 1)), finalX);
-                        setAnalogue(1 + (2 * (player - 1)), finalY);
-                        setGun(0 + (2 * (player - 1)), finalX);
-                        setGun(1 + (2 * (player - 1)), finalY);
+
+                        // check for out-of-bound after rotation ..
+                        if ((!(finalX > 1.0f) || (finalY > 1.0f) || (finalX < 0) || (finalY < 0)))
+                        {
+                            setAnalogue(inputs.abs[ABS_X].output, inputs.abs[ABS_X].reverse ? 1 - finalX : finalX);
+                            setAnalogue(inputs.abs[ABS_Y].output, inputs.abs[ABS_Y].reverse ? 1 - finalY : finalY);
+                            setGun(inputs.abs[ABS_X].output, inputs.abs[ABS_X].reverse ? 1 - finalX : finalX);
+                            setGun(inputs.abs[ABS_Y].output, inputs.abs[ABS_Y].reverse ? 1 - finalY : finalY);
+
+                            outOfBounds = false;
+                        }
                     }
-                    else
+
+                    if (outOfBounds)
                     {
                         /* Set screen out player 1 */
                         setSwitch(player, BUTTON_2, 1);
-                        setAnalogue(0 + (2 * (player - 1)), 0);
-                        setAnalogue(1 + (2 * (player - 1)), 0);
-                        setGun(0 + (2 * (player - 1)), 0);
-                        setGun(1 + (2 * (player - 1)), 0);
+
+                        setAnalogue(inputs.abs[ABS_X].output, 0);
+                        setAnalogue(inputs.abs[ABS_Y].output, 0);
+
+                        setGun(inputs.abs[ABS_X].output, 0);
+                        setGun(inputs.abs[ABS_Y].output, 0);
+
                     }
                     continue;
                 }
@@ -310,10 +322,8 @@ int processMappings(InputMappings *inputMappings, OutputMappings *outputMappings
         OutputMapping tempMapping;
         for (int j = outputMappings->length - 1; j >= 0; j--)
         {
-            if (found)
-                break;
 
-            if (outputMappings->mappings[j].input == inputMappings->mappings[i].input && outputMappings->mappings[j].controllerPlayer == player)
+            if ((outputMappings->mappings[j].input == inputMappings->mappings[i].input) && (outputMappings->mappings[j].controllerPlayer == player))
             {
                 tempMapping = outputMappings->mappings[j];
 
@@ -353,22 +363,23 @@ int processMappings(InputMappings *inputMappings, OutputMappings *outputMappings
 
         if (inputMappings->mappings[i].type == HAT)
         {
-            evInputs->abs[inputMappings->mappings[i].code].type = HAT;
             evInputs->abs[inputMappings->mappings[i].code] = tempMapping;
+            evInputs->abs[inputMappings->mappings[i].code].type = HAT;
             evInputs->absEnabled[inputMappings->mappings[i].code] = 1;
         }
 
         if (inputMappings->mappings[i].type == ANALOGUE)
         {
-            evInputs->abs[inputMappings->mappings[i].code].type = ANALOGUE;
+
             evInputs->abs[inputMappings->mappings[i].code] = tempMapping;
+            evInputs->abs[inputMappings->mappings[i].code].type = ANALOGUE;
             evInputs->absEnabled[inputMappings->mappings[i].code] = 1;
             evInputs->absMultiplier[inputMappings->mappings[i].code] = multiplier;
         }
         else if (inputMappings->mappings[i].type == SWITCH)
         {
-            evInputs->abs[inputMappings->mappings[i].code].type = SWITCH;
             evInputs->key[inputMappings->mappings[i].code] = tempMapping;
+            evInputs->abs[inputMappings->mappings[i].code].type = SWITCH;
             evInputs->absEnabled[inputMappings->mappings[i].code] = 1;
         }
     }

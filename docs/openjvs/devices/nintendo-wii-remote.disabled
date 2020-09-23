@@ -8,3 +8,8 @@ KEY_RIGHT CONTROLLER_BUTTON_RIGHT
 
 BTN_MODE CONTROLLER_BUTTON_TEST
 BTN_1 CONTROLLER_BUTTON_SERVICE 
+
+# These two mappings are CRUCIAL for the WiiMote Analog X/Y channels to work
+# The resulting X/Y coordinates calculated on basis of the IR data will emulated as ABS_X and ABS_Y events to emulated the default controller behaviour.
+ABS_X CONTROLLER_ANALOGUE_X
+ABS_Y CONTROLLER_ANALOGUE_Y
