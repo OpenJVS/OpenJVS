@@ -13,3 +13,6 @@ BTN_1 CONTROLLER_BUTTON_SERVICE
 # The resulting X/Y coordinates calculated on basis of the IR data will emulated as ABS_X and ABS_Y events to emulated the default controller behaviour.
 ABS_X CONTROLLER_ANALOGUE_X
 ABS_Y CONTROLLER_ANALOGUE_Y
+
+# This mapping is for the screen out button which is emulated as KEY_O
+KEY_O CONTROLLER_BUTTON_B

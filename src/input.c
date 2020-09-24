@@ -183,7 +183,7 @@ void *deviceThread(void *_args)
                     if ((x0 != 1023) && (x1 != 1023) && (y0 != 1023) && (y1 != 1023))
                     {
                         /* Set screen in player 1 */
-                        setSwitch(player, BUTTON_2, 0);
+                        setSwitch(player, inputs.key[KEY_O].output, 0);
                         int oneX, oneY, twoX, twoY;
                         if (x0 > x1)
                         {
@@ -223,7 +223,7 @@ void *deviceThread(void *_args)
                     if (outOfBounds)
                     {
                         /* Set screen out player 1 */
-                        setSwitch(player, BUTTON_2, 1);
+                        setSwitch(player, inputs.key[KEY_O].output, 1);
 
                         setAnalogue(inputs.abs[ABS_X].output, 0);
                         setAnalogue(inputs.abs[ABS_Y].output, 0);
@@ -370,7 +370,6 @@ int processMappings(InputMappings *inputMappings, OutputMappings *outputMappings
 
         if (inputMappings->mappings[i].type == ANALOGUE)
         {
-
             evInputs->abs[inputMappings->mappings[i].code] = tempMapping;
             evInputs->abs[inputMappings->mappings[i].code].type = ANALOGUE;
             evInputs->absEnabled[inputMappings->mappings[i].code] = 1;
