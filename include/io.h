@@ -196,9 +196,9 @@ static const JVSCapabilities NAMCO_JYU_IO = {
     .coins = 2,
     .generalPurposeOutputs = 16,
     .gunChannels = 2,
-    .gunXBits = 16,
-    .gunYBits = 16,
-    .rightAlignBits = 0,
+    .gunXBits = 10,
+    .gunYBits = 10,
+    .rightAlignBits = 1,
     .displayName = "Namco JYU IO"};
 
 static const JVSCapabilities NAMCO_V185_IO = {
