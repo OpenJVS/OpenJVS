@@ -19,7 +19,7 @@ int main(int argc, char **argv)
 {
   signal(SIGINT, handleSignal);
 
-  printf("OpenJVS Version 3.3\n\n");
+  printf("OpenJVS Version 3.3.1\n\n");
 
   /* Read the initial config */
   if (parseConfig(DEFAULT_CONFIG_PATH) != JVS_CONFIG_STATUS_SUCCESS)
