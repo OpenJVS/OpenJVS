@@ -159,11 +159,11 @@ JVSConfigStatus parseInputMapping(char *path, InputMappings *inputMappings)
                 {
                     if (strcmp(extra, "REVERSE") == 0)
                     {
-                        mapping.reverse = 1;
+                        analogueMapping.reverse = 1;
                     }
                     else if (strcmp(extra, "SENSITIVITY") == 0)
                     {
-                        mapping.multiplier = atof(getNextToken(NULL, " ", &saveptr));
+                        analogueMapping.multiplier = atof(getNextToken(NULL, " ", &saveptr));
                     }
                     extra = getNextToken(NULL, " ", &saveptr);
                 }
