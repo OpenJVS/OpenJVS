@@ -48,9 +48,8 @@ int main(int argc, char **argv)
     break;
   }
 
-  debug(0, "OpenJVS Version 3.3.1\n\n");
+  debug(0, "OpenJVS Version 3.3.2\n\n");
   debug(0, "You are currently emulating a \033[0;31m%s\033[0m on %s.\n\n", localConfig->capabilities.displayName, localConfig->devicePath);
-  debug(0, "  Output:\t\t%s\n", localConfig->defaultGamePath);
 
   if (initInputs(localConfig->defaultGamePath))
   {
@@ -59,6 +58,7 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
+  debug(0, "  Output:\t\t%s\n", localConfig->defaultGamePath);
   debug(0, "\nDebug messages will appear below, you are in debug mode %d.\n\n", localConfig->debugLevel);
 
   /* Setup the JVS Emulator with the RS485 path and capabilities */

@@ -184,7 +184,19 @@ static const JVSCapabilities SEGA_TYPE_3_IO = {
     .rightAlignBits = 0,
     .displayName = "Sega Type 3 IO"};
 
-static const JVSCapabilities SEGA_TYPE_1_IO;
+static const JVSCapabilities SEGA_TYPE_1_IO = {
+    .name = "SEGA ENTERPRISESLTD.;I/O BD JVS;837-13551;Ver1.00;98/10",
+    .commandVersion = 0x11,
+    .jvsVersion = 0x20,
+    .commsVersion = 0x10,
+    .players = 2,
+    .switches = 13,
+    .analogueInBits = 10,
+    .analogueInChannels = 8,
+    .generalPurposeOutputs = 6,
+    .coins = 2,
+    .rightAlignBits = 0,
+    .displayName = "Sega Type 1 IO"};
 
 static const JVSCapabilities NAMCO_JYU_IO = {
     .name = "namco ltd.;JYU-PCB;Ver1.00;JPN,2Coins 2Guns",
@@ -221,6 +233,7 @@ static const struct
     const char *string;
     const JVSCapabilities capabilities;
 } jvsCapabilitiesConversion[] = {
+    {"SEGA_TYPE_1_IO", SEGA_TYPE_1_IO},
     {"SEGA_TYPE_3_IO", SEGA_TYPE_3_IO},
     {"NAMCO_JYU_IO", NAMCO_JYU_IO},
     {"NAMCO_V185_IO", NAMCO_V185_IO}};

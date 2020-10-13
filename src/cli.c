@@ -7,6 +7,14 @@
 #include "config.h"
 #include "debug.h"
 
+/**
+ * Print usage information
+ * 
+ * Prints the usage information for the OpenJVS command
+ * line interface
+ * 
+ * @returns The status of the action performed
+ **/
 JVSCLIStatus printUsage()
 {
     debug(0, "Usage: openjvs ( options [controller] | [game] )\n\n");
@@ -19,12 +27,30 @@ JVSCLIStatus printUsage()
     return JVS_CLI_STATUS_SUCCESS_CLOSE;
 }
 
+/**
+ * Print version information
+ * 
+ * Prints the version information for the OpenJVS command
+ * line interface
+ * 
+ * @returns The status of the action performed
+ **/
 JVSCLIStatus printVersion()
 {
-    debug(0, "3.3.1\n");
+    debug(0, "3.3.2\n");
     return JVS_CLI_STATUS_SUCCESS_CLOSE;
 }
 
+/**
+ * Enables a device or all devices
+ * 
+ * Enables a specific device if specified. If not,
+ * it will enable all devices in the 
+ * DEFAULT_DEVICE_MAPPING_PATH directory.
+ * 
+ * @param deviceName The name of the device to enable
+ * @returns The status of the action performed
+ */
 JVSCLIStatus enableDevice(char *deviceName)
 {
     if (!deviceName)
@@ -79,6 +105,16 @@ JVSCLIStatus enableDevice(char *deviceName)
     return JVS_CLI_STATUS_SUCCESS_CLOSE;
 }
 
+/**
+ * Disables a device or all devices
+ * 
+ * Disables a specific device if specified. If not,
+ * it will disable all devices in the 
+ * DEFAULT_DEVICE_MAPPING_PATH directory.
+ * 
+ * @param deviceName The name of the device to disable
+ * @returns The status of the action performed
+ */
 JVSCLIStatus disableDevice(char *deviceName)
 {
     if (!deviceName)
@@ -124,12 +160,20 @@ JVSCLIStatus disableDevice(char *deviceName)
     return JVS_CLI_STATUS_SUCCESS_CLOSE;
 }
 
+/**
+ * Prints the listing of devices
+ * 
+ * Will print out a listing of devices, showing which
+ * ones are enabled, disabled and have no mapping present.
+ * 
+ * @returns The status of the action performed
+ **/
 JVSCLIStatus printListing()
 {
     DeviceList deviceList;
     if (!getInputs(&deviceList))
     {
-        debug(0, "OpenJVS Failed to detect any controllers.\nMake sure you are running as root.\n");
+        debug(0, "OpenJVS failed to detect any controllers.\nMake sure you are running as root.\n");
         return EXIT_FAILURE;
     }
     debug(0, "OpenJVS can detect the following controllers:\n\n");
@@ -175,19 +219,32 @@ JVSCLIStatus printListing()
     return JVS_CLI_STATUS_SUCCESS_CLOSE;
 }
 
+/**
+ * Parses the command line arguments
+ * 
+ * Parses the command line arguments and sets the
+ * mapping name if no arguments are set.
+ * 
+ * @param argc The amount of arguments
+ * @param argv Structure holding the arguments
+ * @param map Pointer to a char array holding the map name
+ * @returns The status of the action performed
+ **/
 JVSCLIStatus parseArguments(int argc, char **argv, char *map)
 {
-
+    // If there are no arguments simply continue
     if (argc <= 1)
-    {
         return JVS_CLI_STATUS_SUCCESS_CONTINUE;
-    }
-    else if (argv[1][0] != '-')
+
+    // If the first argument doesn't start with a dash it must be a map file.
+    if (argv[1][0] != '-')
     {
         strcpy(map, argv[1]);
         return JVS_CLI_STATUS_SUCCESS_CONTINUE;
     }
-    else if (strcmp(argv[1], "--help") == 0)
+
+    // Process all of the different arguments people might send
+    if (strcmp(argv[1], "--help") == 0)
     {
         return printUsage();
     }
@@ -208,6 +265,7 @@ JVSCLIStatus parseArguments(int argc, char **argv, char *map)
         return printListing();
     }
 
+    // If none of these where found, the argument is unknown.
     debug(0, "Unknown argument %s\n", argv[1]);
     return JVS_CLI_STATUS_ERROR;
 }
