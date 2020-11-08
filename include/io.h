@@ -138,6 +138,7 @@ typedef struct
     int analogueChannel[JVS_MAX_STATE_SIZE];
     int gunChannel[JVS_MAX_STATE_SIZE];
     int rotaryChannel[JVS_MAX_STATE_SIZE];
+    unsigned char generalPurposeOutput[JVS_MAX_STATE_SIZE];
 } JVSState;
 
 typedef struct
@@ -180,6 +181,7 @@ static const JVSCapabilities SEGA_TYPE_3_IO = {
     .analogueInBits = 10,
     .analogueInChannels = 8,
     .generalPurposeOutputs = 20,
+    .generalPurposeInputs = 20,
     .coins = 2,
     .rightAlignBits = 0,
     .displayName = "Sega Type 3 IO"};
@@ -247,6 +249,7 @@ int incrementCoin(JVSPlayer player);
 int setAnalogue(JVSInput channel, double value);
 int setGun(JVSInput channel, double value);
 int setRotary(JVSInput channel, int value);
+int setGeneralPurposeOutputByte(int channel, unsigned char value);
 
 JVSInput jvsInputFromString(char *jvsInputString);
 JVSPlayer jvsPlayerFromString(char *jvsPlayerString);

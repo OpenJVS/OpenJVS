@@ -2,6 +2,7 @@
 #include "device.h"
 #include "config.h"
 #include "debug.h"
+#include "ffb.h"
 
 #include <time.h>
 
@@ -48,10 +49,11 @@ int initJVS(char *devicePath, const JVSCapabilities *capabilitiesSetup)
 		return 0;
 
 	/* Calculate the alignments for analogue and gun channels, default is left */
-	if(!localCapabilities->rightAlignBits) {
-        analogueRestBits = 16 - localCapabilities->analogueInBits;
-        gunXRestBits = 16 - localCapabilities->gunXBits;
-        gunYRestBits = 16 - localCapabilities->gunYBits;
+	if (!localCapabilities->rightAlignBits)
+	{
+		analogueRestBits = 16 - localCapabilities->analogueInBits;
+		gunXRestBits = 16 - localCapabilities->gunXBits;
+		gunYRestBits = 16 - localCapabilities->gunYBits;
 	}
 
 	/* Float the sense line ready for connection */
@@ -188,6 +190,9 @@ JVSStatus processPacket()
 
 	/* Set the entire packet success line */
 	outputPacket.data[outputPacket.length++] = STATUS_SUCCESS;
+
+	/* Run any custom logic */
+	processJVSFFB(localState);
 
 	while (index < inputPacket.length - 1)
 	{
@@ -348,7 +353,7 @@ JVSStatus processPacket()
 			outputPacket.data[outputPacket.length++] = REPORT_SUCCESS;
 			for (int i = 0; i < inputPacket.data[index + 1]; i++)
 			{
-				outputPacket.data[outputPacket.length++] = 0x00;
+				outputPacket.data[outputPacket.length++] = 0x55;
 			}
 		}
 		break;
@@ -378,6 +383,10 @@ JVSStatus processPacket()
 		{
 			debug(1, "CMD_WRITE_GPO\n");
 			size = 2 + inputPacket.data[index + 1];
+			for (int i = 0; i < inputPacket.data[index + 1]; i++)
+			{
+				setGeneralPurposeOutputByte(i, inputPacket.data[index + 2 + i]);
+			}
 			outputPacket.data[outputPacket.length] = REPORT_SUCCESS;
 			outputPacket.length += 1;
 		}
@@ -387,6 +396,7 @@ JVSStatus processPacket()
 		{
 			debug(1, "CMD_WRITE_GPO_BYTE\n");
 			size = 3;
+			setGeneralPurposeOutputByte(inputPacket.data[index + 1], inputPacket.data[index + 2]);
 			outputPacket.data[outputPacket.length++] = REPORT_SUCCESS;
 		}
 		break;

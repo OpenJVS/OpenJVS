@@ -18,6 +18,7 @@
 
 #include "debug.h"
 #include "config.h"
+#include "ffb.h"
 
 #define DEV_INPUT_EVENT "/dev/input"
 #define test_bit(bit, array) (array[bit / 8] & (1 << (bit % 8)))
@@ -46,16 +47,13 @@ void *deviceThread(void *_args)
     free(args);
 
     int fd;
-    if ((fd = open(devicePath, O_RDONLY)) < 0)
+    if ((fd = open(devicePath, O_RDWR|O_NONBLOCK)) < 0)
     {
         printf("mapping.c:initDevice(): Failed to open device file descriptor:%d \n", fd);
         exit(-1);
     }
 
     struct input_event event;
-
-    int flags = fcntl(fd, F_GETFL, 0);
-    fcntl(fd, F_SETFL, flags | O_NONBLOCK);
 
     int axisIndex;
     uint8_t absoluteBitmask[ABS_MAX / 8 + 1];
@@ -85,6 +83,13 @@ void *deviceThread(void *_args)
 
     /* Wii Remote Variables */
     int x0 = 0, x1 = 0, y0 = 0, y1 = 0;
+
+    /* Init force feedback */
+    if(initFFB(fd)) {
+        setCentering(0);
+        setGain(0);
+        setForce(0);
+    }
 
     while (threadsRunning)
     {

@@ -37,6 +37,11 @@ int initIO(JVSCapabilities *capabilitiesSetup)
 	for (int player = 0; player < capabilities.coins; player++)
 		state.coinCount[player] = 0;
 
+	for (int channel = 0; channel < 20; channel++)
+	{
+		state.generalPurposeOutput[channel] = 0;
+	}
+
 	analogueMax = pow(2, capabilities.analogueInBits) - 1;
 	gunXMax = pow(2, capabilities.gunXBits) - 1;
 	gunYMax = pow(2, capabilities.gunYBits) - 1;
@@ -100,6 +105,12 @@ int setRotary(JVSInput channel, int value)
 		return 0;
 
 	state.rotaryChannel[channel] = value;
+	return 1;
+}
+
+int setGeneralPurposeOutputByte(int channel, unsigned char value)
+{
+	state.generalPurposeOutput[channel] = value;
 	return 1;
 }
 
