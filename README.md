@@ -272,3 +272,14 @@ SEGA_TYPE_3_IO
 NAMCO_JYU_IO
 NAMCO_V185_IO
 ```
+
+## Force Feedback
+
+The following types of force feedback are supported:
+
+- JVS FFB
+  - Sega Racing Classic
+  - Jambo Safari
+  - 18 Wheeler
+  - Route 66
+  - Tokyo Bus Guide
