@@ -1,0 +1,5 @@
+# Viruta Cop 3 Mapping File
+# Author: Bobby Dilley
+
+# Include the normal generic shooting mapping file
+INCLUDE generic-shooting
