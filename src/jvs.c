@@ -192,7 +192,7 @@ JVSStatus processPacket()
 	outputPacket.data[outputPacket.length++] = STATUS_SUCCESS;
 
 	/* Run any custom logic */
-	processJVSFFB(localState);
+	// processJVSFFB(localState);
 
 	while (index < inputPacket.length - 1)
 	{
@@ -492,11 +492,16 @@ JVSStatus processPacket()
 		}
 		break;
 
+		case CMD_NAMCO_SPECIFIC:
+		{
+			size = 5;
+			printf("namco repotr succses\n");
+			outputPacket.data[outputPacket.length++] = REPORT_SUCCESS;
+		}
+		break;
+
 		default:
 		{
-			if (inputPacket.data[index] == CMD_NAMCO_SPECIFIC)
-				debug(0, "CMD_NAMCO_SPECIFIC (Command shown below)\n");
-
 			debug(0, "CMD_UNSUPPORTED (Unsupported command [0x%02hhX])\n", inputPacket.data[index]);
 		}
 		}

@@ -291,7 +291,7 @@ int processJVSFFB(JVSState *localState)
 		if ((ffb & 0x1E) == 24)
 		{
 			//setGain(100);
-			//setCentering(0);
+			setCentering(0);
 			printf("ROLL RIGHT %d\n", value);
 			setForce((double)(value / 100.0));
 
@@ -302,7 +302,7 @@ int processJVSFFB(JVSState *localState)
 		{
 			printf("ROLL LEFT %d\n", value);
 			//setGain(100);
-			//setCentering(0);
+			setCentering(0);
 			setForce((double)(value / 100.0) * -1.0);
 
 			found = 1;
@@ -326,14 +326,14 @@ int processJVSFFB(JVSState *localState)
 			printf("CENTER %d\n", value);
 			setCentering(100);
 			setForce(0);
-			setGain(100);
+			//setGain(100);
 			found = 1;
 		}
 
 		if (!found)
 		{
 			printf("UNKNOWN " BYTE_TO_BINARY_PATTERN, BYTE_TO_BINARY(ffb));
-
+			setGain(100);
 			printf("\n");
 		}
 

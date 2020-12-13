@@ -26,3 +26,11 @@ DEBUG_MODE 0
 # Setup the device path
 DEVICE_PATH /dev/ttyUSB0
 
+# Enable force feedback
+FFB_ENABLE 1
+
+# Set force feedback initial centering (0 -> 100)
+FFB_CENTERING 100
+
+# Set Force Feedback initial gain (0 -> 100)
+FFB_GAIN 80
