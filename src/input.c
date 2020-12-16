@@ -14,6 +14,7 @@
 #include <pthread.h>
 #include <stdbool.h>
 #include <sys/select.h>
+#include <math.h>
 
 #include "debug.h"
 #include "config.h"
@@ -30,6 +31,7 @@ struct MappingThreadArguments
     char devicePath[MAX_PATH_LENGTH];
     EVInputs inputs;
     int wiiMode;
+    int player;
 };
 
 void *deviceThread(void *_args)
@@ -40,6 +42,7 @@ void *deviceThread(void *_args)
     strcpy(devicePath, args->devicePath);
     memcpy(&inputs, &args->inputs, sizeof(EVInputs));
     int wiiMode = args->wiiMode;
+    int player = args->player;
     free(args);
 
     int fd;
@@ -64,7 +67,6 @@ void *deviceThread(void *_args)
         perror("evdev ioctl");
     }
 
-    double min = 0, max = 0;
     for (axisIndex = 0; axisIndex < ABS_MAX; ++axisIndex)
     {
         if (test_bit(axisIndex, absoluteBitmask))
@@ -116,7 +118,21 @@ void *deviceThread(void *_args)
 
             case EV_KEY:
             {
-                setSwitch(inputs.key[event.code].jvsPlayer, inputs.key[event.code].output, event.value == 0 ? 0 : 1);
+                /* Check if the coin button has been pressed */
+                if (inputs.key[event.code].output == COIN)
+                {
+                    if (event.value == 1)
+                        incrementCoin(inputs.key[event.code].jvsPlayer);
+                }
+                else
+                {
+                    setSwitch(inputs.key[event.code].jvsPlayer, inputs.key[event.code].output, event.value == 0 ? 0 : 1);
+
+                    if (inputs.key[event.code].outputSecondary != NONE)
+                    {
+                        setSwitch(inputs.key[event.code].jvsPlayer, inputs.key[event.code].outputSecondary, event.value == 0 ? 0 : 1);
+                    }
+                }
             }
             break;
             case EV_ABS:
@@ -144,6 +160,7 @@ void *deviceThread(void *_args)
                 /* Handle the wii remotes differently */
                 if (wiiMode)
                 {
+                    bool outOfBounds = true;
                     if (event.type == EV_ABS)
                     {
                         switch (event.code)
@@ -163,32 +180,57 @@ void *deviceThread(void *_args)
                         }
                     }
 
-                    if (x0 != 1023 && x1 != 1023 && y0 != 1023 && y1 != 1023)
+                    if ((x0 != 1023) && (x1 != 1023) && (y0 != 1023) && (y1 != 1023))
                     {
                         /* Set screen in player 1 */
-                        setSwitch(PLAYER_1, BUTTON_2, 0);
-                        int middlex = (int)((double)(x0 + x1) / 2.0);
-                        int middley = (int)((double)(y0 + y1) / 2.0);
+                        setSwitch(player, inputs.key[KEY_O].output, 0);
+                        int oneX, oneY, twoX, twoY;
+                        if (x0 > x1)
+                        {
+                            oneY = y0;
+                            oneX = x0;
+                            twoY = y1;
+                            twoX = x1;
+                        }
+                        else
+                        {
+                            oneY = y1;
+                            oneX = x1;
+                            twoY = y0;
+                            twoX = x0;
+                        }
 
-                        int valuex = 1023 - middlex;
-                        int valuey = middley;
+                        /* Use some fancy maths that I don't understand fully */
+                        double valuex = 512 + cos(atan2(twoY - oneY, twoX - oneX) * -1) * (((oneX - twoX) / 2 + twoX) - 512) - sin(atan2(twoY - oneY, twoX - oneX) * -1) * (((oneY - twoY) / 2 + twoY) - 384);
+                        double valuey = 384 + sin(atan2(twoY - oneY, twoX - oneX) * -1) * (((oneX - twoX) / 2 + twoX) - 512) + cos(atan2(twoY - oneY, twoX - oneX) * -1) * (((oneY - twoY) / 2 + twoY) - 384);
 
                         double finalX = (((double)valuex / (double)1023) * 1.0);
-                        double finalY = (((double)valuey / (double)1023) * 1.0);
+                        double finalY = 1.0f - ((double)valuey / (double)1023);
 
-                        setAnalogue(0, finalX);
-                        setAnalogue(1, finalY);
-                        setGun(0, finalX);
-                        setGun(1, finalY);
+
+                        // check for out-of-bound after rotation ..
+                        if ((!(finalX > 1.0f) || (finalY > 1.0f) || (finalX < 0) || (finalY < 0)))
+                        {
+                            setAnalogue(inputs.abs[ABS_X].output, inputs.abs[ABS_X].reverse ? 1 - finalX : finalX);
+                            setAnalogue(inputs.abs[ABS_Y].output, inputs.abs[ABS_Y].reverse ? 1 - finalY : finalY);
+                            setGun(inputs.abs[ABS_X].output, inputs.abs[ABS_X].reverse ? 1 - finalX : finalX);
+                            setGun(inputs.abs[ABS_Y].output, inputs.abs[ABS_Y].reverse ? 1 - finalY : finalY);
+
+                            outOfBounds = false;
+                        }
                     }
-                    else
+
+                    if (outOfBounds)
                     {
                         /* Set screen out player 1 */
-                        setSwitch(PLAYER_1, BUTTON_2, 1);
-                        setAnalogue(0, 0);
-                        setAnalogue(1, 0);
-                        setGun(0, 0);
-                        setGun(1, 0);
+                        setSwitch(player, inputs.key[KEY_O].output, 1);
+
+                        setAnalogue(inputs.abs[ABS_X].output, 0);
+                        setAnalogue(inputs.abs[ABS_Y].output, 0);
+
+                        setGun(inputs.abs[ABS_X].output, 0);
+                        setGun(inputs.abs[ABS_Y].output, 0);
+
                     }
                     continue;
                 }
@@ -215,12 +257,13 @@ void *deviceThread(void *_args)
 
     return 0;
 }
-void startThread(EVInputs *inputs, char *devicePath, int wiiMode)
+void startThread(EVInputs *inputs, char *devicePath, int wiiMode, int player)
 {
     struct MappingThreadArguments *args = malloc(sizeof(struct MappingThreadArguments));
     strcpy(args->devicePath, devicePath);
     memcpy(&args->inputs, inputs, sizeof(EVInputs));
     args->wiiMode = wiiMode;
+    args->player = player;
     pthread_create(&threadID[threadCount], NULL, deviceThread, args);
     threadCount++;
 }
@@ -237,7 +280,7 @@ void stopThreads()
 
 int evDevFromString(char *evDevString)
 {
-    for (int i = 0; i < sizeof(evDevConversion) / sizeof(evDevConversion[0]); i++)
+    for (long unsigned int i = 0; i < sizeof(evDevConversion) / sizeof(evDevConversion[0]); i++)
     {
         if (strcmp(evDevConversion[i].string, evDevString) == 0)
         {
@@ -279,10 +322,8 @@ int processMappings(InputMappings *inputMappings, OutputMappings *outputMappings
         OutputMapping tempMapping;
         for (int j = outputMappings->length - 1; j >= 0; j--)
         {
-            if (found)
-                break;
 
-            if (outputMappings->mappings[j].input == inputMappings->mappings[i].input && outputMappings->mappings[j].controllerPlayer == player)
+            if ((outputMappings->mappings[j].input == inputMappings->mappings[i].input) && (outputMappings->mappings[j].controllerPlayer == player))
             {
                 tempMapping = outputMappings->mappings[j];
 
@@ -322,22 +363,22 @@ int processMappings(InputMappings *inputMappings, OutputMappings *outputMappings
 
         if (inputMappings->mappings[i].type == HAT)
         {
-            evInputs->abs[inputMappings->mappings[i].code].type = HAT;
             evInputs->abs[inputMappings->mappings[i].code] = tempMapping;
+            evInputs->abs[inputMappings->mappings[i].code].type = HAT;
             evInputs->absEnabled[inputMappings->mappings[i].code] = 1;
         }
 
         if (inputMappings->mappings[i].type == ANALOGUE)
         {
-            evInputs->abs[inputMappings->mappings[i].code].type = ANALOGUE;
             evInputs->abs[inputMappings->mappings[i].code] = tempMapping;
+            evInputs->abs[inputMappings->mappings[i].code].type = ANALOGUE;
             evInputs->absEnabled[inputMappings->mappings[i].code] = 1;
             evInputs->absMultiplier[inputMappings->mappings[i].code] = multiplier;
         }
         else if (inputMappings->mappings[i].type == SWITCH)
         {
-            evInputs->abs[inputMappings->mappings[i].code].type = SWITCH;
             evInputs->key[inputMappings->mappings[i].code] = tempMapping;
+            evInputs->abs[inputMappings->mappings[i].code].type = SWITCH;
             evInputs->absEnabled[inputMappings->mappings[i].code] = 1;
         }
     }
@@ -397,51 +438,185 @@ int getInputs(DeviceList *deviceList)
     return 1;
 }
 
+static int initInputsWiimote(int *playerNumber, DeviceList *deviceList, OutputMappings *outputMappings)
+{
+    /* Look for wiimote devices */
+    int error = 0;
+    int idx_ir = -1;
+    int idx_controls = -1;
+
+    if (playerNumber == NULL)
+    {
+        error = -1;
+    }
+
+    if (error == 0)
+    {
+        if (deviceList == NULL)
+        {
+            error = -1;
+        }
+    }
+
+    if (error == 0)
+    {
+        if (outputMappings == NULL)
+        {
+            error = -1;
+        }
+    }
+
+    if (error == 0)
+    {
+        for (int i = 0; i < deviceList->length; i++)
+        {
+            InputMappings inputMappings;
+            inputMappings.length = 0;
+
+            EVInputs evInputs = (EVInputs){0};
+
+            if (NULL == strstr(deviceList->devices[i].name, WIIMOTE_DEVICE_NAME))
+            {
+                continue;
+            }
+
+            if (strcmp(deviceList->devices[i].name, WIIMOTE_DEVICE_NAME_IR) == 0)
+            {
+                idx_ir = i;
+            }
+
+            if (strcmp(deviceList->devices[i].name, WIIMOTE_DEVICE_NAME) == 0)
+            {
+                idx_controls = i;
+            }
+
+            if ((idx_ir != -1) && (idx_controls != -1))
+            {
+                bool failed = false;
+
+                if (parseInputMapping(deviceList->devices[idx_controls].name, &inputMappings) != JVS_CONFIG_STATUS_SUCCESS || inputMappings.length == 0)
+                {
+                    failed = true;
+                    printf("parseInputMapping was not successfully!\n");
+                }
+
+                if (!failed)
+                {
+                    if (!processMappings(&inputMappings, outputMappings, &evInputs, (ControllerPlayer)*playerNumber))
+                    {
+                        failed = true;
+                        printf("Failed to process the mapping for %s\n", deviceList->devices[idx_controls].name);
+                    }
+                }
+
+                if (!failed)
+                {
+                    startThread(&evInputs, deviceList->devices[idx_ir].path, 1, *playerNumber);
+                    startThread(&evInputs, deviceList->devices[idx_controls].path, 0, *playerNumber);
+
+                    debug(0, "  Player %d:\t\t%s\n", *playerNumber, deviceList->devices[i].fullName);
+
+                    (*playerNumber)++;
+                }
+                idx_ir = idx_controls = -1;
+            }
+        }
+    }
+    return error;
+}
+
+static int initInputsNormalMapped(int *playerNumber, DeviceList *deviceList, OutputMappings *outputMappings)
+{
+    /* Look for all non-wiimote devices */
+
+    int error = 0;
+
+    if (playerNumber == NULL)
+    {
+        error = -1;
+    }
+
+    if (error == 0)
+    {
+        if (deviceList == NULL)
+        {
+            error = -1;
+        }
+    }
+
+    if (error == 0)
+    {
+        if (outputMappings == NULL)
+        {
+            error = -1;
+        }
+    }
+
+    if (error == 0)
+    {
+        for (int i = 0; i < deviceList->length; i++)
+        {
+            InputMappings inputMappings;
+            inputMappings.length = 0;
+
+            EVInputs evInputs = (EVInputs){0};
+
+            if (NULL != strstr(deviceList->devices[i].name, WIIMOTE_DEVICE_NAME))
+            {
+                continue;
+            }
+
+            if (parseInputMapping(deviceList->devices[i].name, &inputMappings) != JVS_CONFIG_STATUS_SUCCESS || inputMappings.length == 0)
+                continue;
+
+            if (!processMappings(&inputMappings, outputMappings, &evInputs, (ControllerPlayer)*playerNumber))
+            {
+                printf("Failed to process the mapping for %s\n", deviceList->devices[i].name);
+            }
+            else
+            {
+                startThread(&evInputs, deviceList->devices[i].path, 0, *playerNumber);
+                debug(0, "  Player %d:\t\t%s\n", *playerNumber, deviceList->devices[i].fullName);
+                (*playerNumber)++;
+            }
+        }
+    }
+    return error;
+}
+
 int initInputs(char *outputMappingPath)
 {
-
+    int retval = 0;
+    int playerNumber = 1;
     DeviceList deviceList;
+    OutputMappings outputMappings;
+
     if (!getInputs(&deviceList))
     {
         debug(0, "Error: Failed to open devices\n");
-        return 0;
+        retval = -1;
     }
 
-    OutputMappings outputMappings;
-    if (parseOutputMapping(outputMappingPath, &outputMappings) != JVS_CONFIG_STATUS_SUCCESS)
+    if (retval == 0)
     {
-        debug(0, "Error: Cannot find an output mapping\n");
-        return 0;
-    }
-
-    int playerNumber = 1;
-    for (int i = 0; i < deviceList.length; i++)
-    {
-        InputMappings inputMappings;
-        inputMappings.length = 0;
-
-        if (parseInputMapping(deviceList.devices[i].name, &inputMappings) != JVS_CONFIG_STATUS_SUCCESS || inputMappings.length == 0)
-            continue;
-
-        EVInputs evInputs = (EVInputs){0};
-
-        if (!processMappings(&inputMappings, &outputMappings, &evInputs, (ControllerPlayer)playerNumber))
+        if (parseOutputMapping(outputMappingPath, &outputMappings) != JVS_CONFIG_STATUS_SUCCESS)
         {
-            debug(0, "Failed to process the mapping for %s\n", deviceList.devices[i].name);
-        }
-        else
-        {
-            /* Start the one before it in wii mode (event-1 is usually the ir)*/
-            if (strcmp(deviceList.devices[i].name, "nintendo-wii-remote") == 0)
-            {
-                startThread(&evInputs, deviceList.devices[i - 1].path, 1);
-            }
-
-            startThread(&evInputs, deviceList.devices[i].path, 0);
-            debug(0, "  Player %d:\t\t%s\n", playerNumber, deviceList.devices[i].fullName);
-            playerNumber++;
+            debug(0, "Error: Cannot find an output mapping\n");
+            retval = -1;
         }
     }
 
-    return 1;
+    if (retval == 0)
+    {
+        /* Look for all non-wiimote devices */
+        retval = initInputsNormalMapped(&playerNumber, &deviceList, &outputMappings);
+    }
+
+    if (retval == 0)
+    {
+        /* Look for wiimote devices */
+        retval = initInputsWiimote(&playerNumber, &deviceList, &outputMappings);
+    }
+
+    return retval;
 }

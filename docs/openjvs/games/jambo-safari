@@ -1,0 +1,12 @@
+# Generic mapping file for Jambo-Safari
+# Author: RedOne87
+
+# Include the generic mapping file for driving games
+INCLUDE generic-driving
+
+
+# Lever up: P1 Up
+CONTROLLER_BUTTON_A CONTROLLER_1 BUTTON_UP PLAYER_2
+# Lever down: P2 Down
+CONTROLLER_BUTTON_D CONTROLLER_1 BUTTON_DOWN PLAYER_2
+

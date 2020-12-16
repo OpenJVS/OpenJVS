@@ -35,7 +35,7 @@ int initIO(JVSCapabilities *capabilitiesSetup)
 		state.rotaryChannel[rotaryChannels] = 0;
 
 	for (int player = 0; player < capabilities.coins; player++)
-		state.coinCount[player] = 1;
+		state.coinCount[player] = 0;
 
 	analogueMax = pow(2, capabilities.analogueInBits) - 1;
 	gunXMax = pow(2, capabilities.gunXBits) - 1;
@@ -48,7 +48,7 @@ int setSwitch(JVSPlayer player, JVSInput switchNumber, int value)
 {
 	if (player > capabilities.players)
 	{
-		printf("Error: That player does not exist.\n");
+		printf("Error: That player %d does not exist.\n", player);
 		return 0;
 	}
 

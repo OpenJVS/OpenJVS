@@ -21,7 +21,7 @@ void debug(int level, const char *format, ...)
     va_end(args);
 }
 
-void debugBuffer(int level, char *buffer, int length)
+void debugBuffer(int level, unsigned char *buffer, int length)
 {
     if (globalLevel < level)
         return;

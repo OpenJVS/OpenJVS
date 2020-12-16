@@ -113,7 +113,7 @@ JVSConfigStatus parseInputMapping(char *path, InputMappings *inputMappings)
             if (status == JVS_CONFIG_STATUS_SUCCESS)
                 memcpy(inputMappings, &tempInputMappings, sizeof(InputMappings));
         }
-        else if (command[0] == 'K' || command[0] == 'B')
+        else if (command[0] == 'K' || command[0] == 'B' || command[0] == 'C')
         {
             int code = evDevFromString(command);
             ControllerInput input = controllerInputFromString(getNextToken(NULL, " ", &saveptr));
@@ -126,44 +126,49 @@ JVSConfigStatus parseInputMapping(char *path, InputMappings *inputMappings)
             inputMappings->mappings[inputMappings->length] = mapping;
             inputMappings->length++;
         }
-        else if (command[0] == 'A' && command[4] == 'H')
-        {
-            int code = evDevFromString(command);
-            ControllerInput input = controllerInputFromString(getNextToken(NULL, " ", &saveptr));
-            ControllerInput secondaryInput = controllerInputFromString(getNextToken(NULL, " ", &saveptr));
-
-            InputMapping mapping = {
-                .type = HAT,
-                .code = code,
-                .input = input,
-                .inputSecondary = secondaryInput};
-
-            inputMappings->mappings[inputMappings->length] = mapping;
-            inputMappings->length++;
-        }
         else if (command[0] == 'A')
         {
-            InputMapping mapping = {
-                .type = ANALOGUE,
-                .code = evDevFromString(command),
-                .input = controllerInputFromString(getNextToken(NULL, " ", &saveptr)),
-                .reverse = 0,
-                .multiplier = 1,
-            };
+            char *firstArgument = getNextToken(NULL, " ", &saveptr);
+            InputMapping mapping;
 
-            /* Check to see if we should reverse */
-            char *extra = getNextToken(NULL, " ", &saveptr);
-            while (extra != NULL)
+            if (strlen(firstArgument) > 11 && firstArgument[11] == 'B')
             {
-                if (strcmp(extra, "REVERSE") == 0)
+                // This suggests we are doing it as a hat!
+                InputMapping hatMapping = {
+                    .type = HAT,
+                    .code = evDevFromString(command),
+                    .input = controllerInputFromString(firstArgument),
+                    .inputSecondary = controllerInputFromString(getNextToken(NULL, " ", &saveptr)),
+                };
+                mapping = hatMapping;
+            }
+            else
+            {
+                // Normal Analogue Mapping
+                InputMapping analogueMapping = {
+                    .type = ANALOGUE,
+                    .code = evDevFromString(command),
+                    .input = controllerInputFromString(firstArgument),
+                    .reverse = 0,
+                    .multiplier = 1,
+                };
+
+                /* Check to see if we should reverse */
+                char *extra = getNextToken(NULL, " ", &saveptr);
+                while (extra != NULL)
                 {
-                    mapping.reverse = 1;
+                    if (strcmp(extra, "REVERSE") == 0)
+                    {
+                        analogueMapping.reverse = 1;
+                    }
+                    else if (strcmp(extra, "SENSITIVITY") == 0)
+                    {
+                        analogueMapping.multiplier = atof(getNextToken(NULL, " ", &saveptr));
+                    }
+                    extra = getNextToken(NULL, " ", &saveptr);
                 }
-                else if (strcmp(extra, "SENSITIVITY") == 0)
-                {
-                    mapping.multiplier = atof(getNextToken(NULL, " ", &saveptr));
-                }
-                extra = getNextToken(NULL, " ", &saveptr);
+
+                mapping = analogueMapping;
             }
 
             inputMappings->mappings[inputMappings->length] = mapping;
@@ -221,7 +226,17 @@ JVSConfigStatus parseOutputMapping(char *path, OutputMappings *outputMappings)
                 .input = controllerInputFromString(command),
                 .controllerPlayer = controllerPlayer,
                 .output = jvsInputFromString(getNextToken(NULL, " ", &saveptr)),
+                .outputSecondary = NONE,
                 .jvsPlayer = jvsPlayerFromString(getNextToken(NULL, " ", &saveptr))};
+
+            /* Check to see if we have a secondary output */
+            char *secondaryOutput = getNextToken(NULL, " ", &saveptr);
+            if (secondaryOutput != NULL)
+            {
+                printf("Adding secondary output\n");
+                mapping.outputSecondary = jvsInputFromString(secondaryOutput);
+            }
+
             outputMappings->mappings[outputMappings->length] = mapping;
             outputMappings->length++;
         }
