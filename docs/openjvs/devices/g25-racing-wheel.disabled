@@ -17,8 +17,8 @@ ABS_X CONTROLLER_ANALOGUE_X
 
 # Pedals (Accelerator, break, clutch):
 # ------------------------------------
-ABS_Z CONTROLLER_ANALOGUE_R REVERSE
-ABS_RZ CONTROLLER_ANALOGUE_L REVERSE
+ABS_Z CONTROLLER_ANALOGUE_L REVERSE
+ABS_RZ CONTROLLER_ANALOGUE_R REVERSE
 # ABS_Y
 
 # 2 red buttons on the wheel (left to right):
