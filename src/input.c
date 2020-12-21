@@ -313,19 +313,27 @@ ControllerPlayer controllerPlayerFromString(char *controllerPlayerString)
     return -1;
 }
 
-int processMappings(InputMappings *inputMappings, OutputMappings *outputMappings, EVInputs *evInputs, ControllerPlayer player)
+int processMappings(InputMappings* inputMappings, OutputMappings* outputMappings, EVInputs* evInputs, ControllerPlayer player)
 {
     for (int i = 0; i < inputMappings->length; i++)
     {
-        int found = 0;
+        int nbrFound = 0;
         double multiplier = 1;
         OutputMapping tempMapping;
+
         for (int j = outputMappings->length - 1; j >= 0; j--)
         {
+            //Accept up to 2 output assignements
+            if (nbrFound == 2)
+                break;
 
-            if ((outputMappings->mappings[j].input == inputMappings->mappings[i].input) && (outputMappings->mappings[j].controllerPlayer == player))
+            if (outputMappings->mappings[j].input == inputMappings->mappings[i].input && outputMappings->mappings[j].controllerPlayer == player)
             {
-                tempMapping = outputMappings->mappings[j];
+                if (nbrFound == 0)
+                    tempMapping = outputMappings->mappings[j];
+                else
+                    //If second asignment found, set it as outputSecondary (not sure it's the best place but it works :)
+                    tempMapping.outputSecondary = outputMappings->mappings[j].output;
 
                 /* Find the second mapping if needed*/
                 if (inputMappings->mappings[i].type == HAT)
@@ -337,7 +345,7 @@ int processMappings(InputMappings *inputMappings, OutputMappings *outputMappings
                         {
                             tempMapping.outputSecondary = outputMappings->mappings[p].output;
                             tempMapping.type = HAT;
-                            found = 1;
+                            nbrFound = 2;
                             break;
                         }
                     }
@@ -350,14 +358,15 @@ int processMappings(InputMappings *inputMappings, OutputMappings *outputMappings
 
                 tempMapping.reverse ^= inputMappings->mappings[i].reverse;
                 multiplier = inputMappings->mappings[i].multiplier;
-                found = 1;
-                break;
+                nbrFound++;
+
+                //break;
             }
         }
 
-        if (!found)
+        if (!nbrFound)
         {
-            debug(1, "Error: no outside mapping found for %d\n", inputMappings->mappings[i].input);
+            debug(1, "Error: no outside mapping found for input %s (%d)\n", controllerInputConversion[inputMappings->mappings[i].input], inputMappings->mappings[i].input);
             continue;
         }
 
@@ -365,6 +374,7 @@ int processMappings(InputMappings *inputMappings, OutputMappings *outputMappings
         {
             evInputs->abs[inputMappings->mappings[i].code] = tempMapping;
             evInputs->abs[inputMappings->mappings[i].code].type = HAT;
+
             evInputs->absEnabled[inputMappings->mappings[i].code] = 1;
         }
 
@@ -372,6 +382,7 @@ int processMappings(InputMappings *inputMappings, OutputMappings *outputMappings
         {
             evInputs->abs[inputMappings->mappings[i].code] = tempMapping;
             evInputs->abs[inputMappings->mappings[i].code].type = ANALOGUE;
+
             evInputs->absEnabled[inputMappings->mappings[i].code] = 1;
             evInputs->absMultiplier[inputMappings->mappings[i].code] = multiplier;
         }
@@ -379,6 +390,7 @@ int processMappings(InputMappings *inputMappings, OutputMappings *outputMappings
         {
             evInputs->key[inputMappings->mappings[i].code] = tempMapping;
             evInputs->abs[inputMappings->mappings[i].code].type = SWITCH;
+
             evInputs->absEnabled[inputMappings->mappings[i].code] = 1;
         }
     }
@@ -390,9 +402,9 @@ int isEventDevice(const struct dirent *dir)
     return strncmp("event", dir->d_name, 5) == 0;
 }
 
-int getInputs(DeviceList *deviceList)
+int getInputs(DeviceList* deviceList)
 {
-    struct dirent **namelist;
+    struct dirent** namelist;
 
     deviceList->length = 0;
 
@@ -403,11 +415,18 @@ int getInputs(DeviceList *deviceList)
         return 0;
     }
 
+    //Qualifying better the Aimtrak device
+    //char aimtrakSuffix[3][12] = { "-joystick" , "-out-screen" ,"-in-screen" };
+    char aimtrakRemap[3][32] = { AIMTRAK_DEVICE_NAME_REMAP_JOYSTICK, AIMTRAK_DEVICE_NAME_REMAP_OUT_SCREEN, AIMTRAK_DEVICE_NAME_REMAP_IN_SCREEN };
+
+    int cpAimtrakRemapIdx = 0;
+
     for (int i = 0; i < numberOfDevices; i++)
     {
         char fname[512];
         int fd = -1;
         char name[256] = "???";
+
 
         snprintf(fname, sizeof(fname), "%s/%s", DEV_INPUT_EVENT, namelist[i]->d_name);
 
@@ -417,21 +436,36 @@ int getInputs(DeviceList *deviceList)
             close(fd);
         }
 
-        strcpy(deviceList->devices[deviceList->length].fullName, name);
-
-        for (int i = 0; i < (int)strlen(name); i++)
+        //removing Touchscreen from device list (not supported by OpenJVS
+        if (NULL == strstr(name, "Touchscreen"))
         {
-            name[i] = tolower(name[i]);
-            if (name[i] == ' ' || name[i] == '/' || name[i] == '(' || name[i] == ')')
-            {
-                name[i] = '-';
-            }
-        }
+            strcpy(deviceList->devices[deviceList->length].fullName, name);
 
-        strcpy(deviceList->devices[deviceList->length].name, name);
-        strcpy(deviceList->devices[deviceList->length].path, fname);
-        deviceList->length++;
-        free(namelist[i]);
+            for (int i = 0; i < (int)strlen(name); i++)
+            {
+                name[i] = tolower(name[i]);
+                if (name[i] == ' ' || name[i] == '/' || name[i] == '(' || name[i] == ')')
+                {
+                    name[i] = '-';
+                }
+            }
+
+            if (strcmp(name, AIMTRAK_DEVICE_NAME) == 0)
+            {
+                //printf("DEBUG: found ultimarc device -> idx=%d, path=%s\n", cpAimtrakSuffixIdx, fname);
+
+                strcpy(name, aimtrakRemap[cpAimtrakRemapIdx]);
+                //strcat(name, aimtrakRemap[cpAimtrakRemapIdx]);
+                if (cpAimtrakRemapIdx == 2)
+                    cpAimtrakRemapIdx = 0;
+                else
+                    cpAimtrakRemapIdx++;
+            }
+            strcpy(deviceList->devices[deviceList->length].name, name);
+            strcpy(deviceList->devices[deviceList->length].path, fname);
+            deviceList->length++;
+            free(namelist[i]);
+        }
     }
     free(namelist);
 
@@ -561,7 +595,7 @@ static int initInputsNormalMapped(int *playerNumber, DeviceList *deviceList, Out
 
             EVInputs evInputs = (EVInputs){0};
 
-            if (NULL != strstr(deviceList->devices[i].name, WIIMOTE_DEVICE_NAME))
+            if ((NULL != strstr(deviceList->devices[i].name, WIIMOTE_DEVICE_NAME)) || (NULL != strstr(deviceList->devices[i].name, AIMTRAK_DEVICE_NAME)))
             {
                 continue;
             }
@@ -584,19 +618,120 @@ static int initInputsNormalMapped(int *playerNumber, DeviceList *deviceList, Out
     return error;
 }
 
-int initInputs(char *outputMappingPath)
+
+/* AIMTRAK SUPPORT:
+
+   AIMTRAK input device is detected as 3 seperate devices
+   The first device is mostprobably a joystick emulation (should return events only when gun configured accordingly, but I never saw something?)
+   The second device returns events when the gun is "out of screen' (buttons and trigger when the gun is out of screen)
+   The third device returns events when the gun is 'in screen' (x & y position, buttons and trigger)
+
+   Because of that, openJVS will read 3 device maps for supporting this Aimtrak. Here are the logical device map names assigned by openjvs:
+        - /etc/openjvs/devices/ultimarc-ultimarc-joystick -> this map may just not exist or be disabled, not used
+        - /etc/openjvs/devices/ultimarc-ultimarc-screen-out
+        - /etc/openjvs/devices/ultimarc-ultimarc-screen-in
+
+    -> !!! 1 Aimtrak Gun is thus detected as 3 devices but for it must be mapped for 1 player
+
+   */
+static int initInputsAimtrak(int* playerNumber, DeviceList* deviceList, OutputMappings* outputMappings)
+{
+    /* Look for all non-wiimote devices */
+
+    int error = 0;
+
+    if (playerNumber == NULL)
+    {
+        error = -1;
+    }
+
+    if (error == 0)
+    {
+        if (deviceList == NULL)
+        {
+            error = -1;
+        }
+    }
+
+    if (error == 0)
+    {
+        if (outputMappings == NULL)
+        {
+            error = -1;
+        }
+    }
+
+    if (error == 0)
+    {
+        int cpRealAimtrakPlayer = *playerNumber;
+        char FirstDetectedAimtrak[128];
+        FirstDetectedAimtrak[0] = '\0';
+
+        for (int i = 0; i < deviceList->length; i++)
+        {
+            //filter on Aimtrack device name
+            if (NULL == strstr(deviceList->devices[i].name, AIMTRAK_DEVICE_NAME))
+                continue;
+
+            InputMappings inputMappings;
+            inputMappings.length = 0;
+
+            EVInputs evInputs = (EVInputs){ 0 };
+
+            //parse input device file, if not ok, continue with next device
+            if (parseInputMapping(deviceList->devices[i].name, &inputMappings) != JVS_CONFIG_STATUS_SUCCESS || inputMappings.length == 0)
+                continue;
+
+            //Increment Player number only when second occurence of first Aimtrak device is detected (i.e. ultimarc_iltimarc_joystick)
+            //goal is to map the 3 input devices on same output (player)
+            if ((strcmp(FirstDetectedAimtrak, deviceList->devices[i].name) == 0))
+                (*playerNumber)++;
+
+            if (!processMappings(&inputMappings, outputMappings, &evInputs, (ControllerPlayer)*playerNumber))
+            {
+                printf("Failed to process the mapping %s (for %s)\n", deviceList->devices[i].name, deviceList->devices[i].name);
+            }
+            else
+            {
+                startThread(&evInputs, deviceList->devices[i].path, 0, *playerNumber);
+
+                //In case someone has connected 2 Aimtrak for instance, we never know :)
+                if (FirstDetectedAimtrak[0] == '\0' || (strcmp(FirstDetectedAimtrak, deviceList->devices[i].name) == 0))
+                {
+                    debug(0, "  Player %d: %s (mapped as CONTROLLER_%d in output)\n", cpRealAimtrakPlayer, deviceList->devices[i].name, *playerNumber);
+                    strcpy(FirstDetectedAimtrak, deviceList->devices[i].name);
+                }
+                else
+                {
+                    debug(0, "            %s  (mapped as CONTROLLER_%d in output)\n", deviceList->devices[i].name, *playerNumber);
+                }
+
+
+            }
+
+            cpRealAimtrakPlayer++;
+        }
+    }
+    return error;
+}
+
+int initInputs(char* outputMappingPath)
 {
     int retval = 0;
     int playerNumber = 1;
     DeviceList deviceList;
     OutputMappings outputMappings;
 
+    /* Step 1: Just get a list of connected "INPUT DEVICES" */
+    /*         This list will be used later by initInputsNormalMapped() and initInputsWiimote() */
+    /*         for reading & parsing of "DEVICE MAPPING FILE" */
     if (!getInputs(&deviceList))
     {
         debug(0, "Error: Failed to open devices\n");
         retval = -1;
     }
 
+    /* Step 2: The "GAME OUTPUT MAPPING FILE" is given as parameter by the user (i.e. 'ghost-squad') */
     if (retval == 0)
     {
         if (parseOutputMapping(outputMappingPath, &outputMappings) != JVS_CONFIG_STATUS_SUCCESS)
@@ -606,6 +741,7 @@ int initInputs(char *outputMappingPath)
         }
     }
 
+    /* Step 3: time to read the "DEVICE MAPPING FILE" and make the matching with the "GAME OUTPUT MAPPING FILE" */
     if (retval == 0)
     {
         /* Look for all non-wiimote devices */
@@ -616,6 +752,12 @@ int initInputs(char *outputMappingPath)
     {
         /* Look for wiimote devices */
         retval = initInputsWiimote(&playerNumber, &deviceList, &outputMappings);
+    }
+
+    if (retval == 0)
+    {
+        /* Look for wiimote devices */
+        retval = initInputsAimtrak(&playerNumber, &deviceList, &outputMappings);
     }
 
     return retval;

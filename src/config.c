@@ -94,8 +94,10 @@ JVSConfigStatus parseInputMapping(char *path, InputMappings *inputMappings)
     strcpy(gamePath, DEFAULT_DEVICE_MAPPING_PATH);
     strcat(gamePath, path);
 
-    if ((file = fopen(gamePath, "r")) == NULL)
+    if ((file = fopen(gamePath, "r")) == NULL) {
+        //debug(1, "Error: can not find Input Mapping %s\n", gamePath);
         return JVS_CONFIG_STATUS_FILE_NOT_FOUND;
+    }
 
     while (fgets(buffer, MAX_LINE_LENGTH, file))
     {
@@ -176,7 +178,7 @@ JVSConfigStatus parseInputMapping(char *path, InputMappings *inputMappings)
         }
         else
         {
-            printf("Error: Unknown mapping command %s\n", command);
+            printf("Error: parsing Input Mapping, Unknown mapping command %s\n", command);
         }
     }
 
@@ -260,7 +262,7 @@ JVSConfigStatus parseOutputMapping(char *path, OutputMappings *outputMappings)
         }
         else
         {
-            printf("Error: Unknown mapping command %s\n", command);
+            printf("Error:  parsing Output Mapping, Unknown mapping command %s\n", command);
         }
     }
 

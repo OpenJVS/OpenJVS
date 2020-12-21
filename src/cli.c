@@ -176,7 +176,7 @@ JVSCLIStatus printListing()
         debug(0, "OpenJVS failed to detect any controllers.\nMake sure you are running as root.\n");
         return EXIT_FAILURE;
     }
-    debug(0, "OpenJVS can detect the following controllers:\n\n");
+    debug(0, "OpenJVS has detected the following controllers:\n\n");
     InputMappings inputMappings;
     inputMappings.length = 0;
     debug(0, "Enabled:\n");
