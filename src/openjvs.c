@@ -48,14 +48,13 @@ int main(int argc, char **argv)
     break;
   }
 
-  debug(0, "OpenJVS Version 3.3.2\n\n");
+  debug(0, "OpenJVS Version 3.3.3\n\n");
   debug(0, "You are currently emulating a \033[0;31m%s\033[0m on %s.\n\n", localConfig->capabilities.displayName, localConfig->devicePath);
 
   if (initInputs(localConfig->defaultGamePath))
   {
     debug(0, "Error: Could not initialise the inputs - make sure you are root\n");
     debug(0, "Try running `sudo openjvs --list` to see the devices\n");
-    return EXIT_FAILURE;
   }
 
   debug(0, "  Output:\t\t%s\n", localConfig->defaultGamePath);
