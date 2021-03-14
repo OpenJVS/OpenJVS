@@ -20,7 +20,7 @@ OpenJVS requires a USB RS485 dongle to communicate, and supports the following h
 | Namco System 256                | Working     | Yes                 |
 | Taito Type X+                   | Working     | Yes                 |
 | Taito Type X2                   | Working     | Yes                 |
-| exA-Arcadia                     | Working     |                     |
+| exA-Arcadia                     | Working     | No                  |
 
 On games that require a sense line, the following has to be wired up:
 
