@@ -1,5 +1,6 @@
 #include "config.h"
 
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -206,6 +207,19 @@ JVSConfigStatus parseOutputMapping(char *path, OutputMappings *outputMappings)
             continue;
 
         char *command = getNextToken(buffer, " ", &saveptr);
+        bool map_analogue_to_digital;
+        if (strcmp(command, "DIGITAL") == 0)
+        {
+            map_analogue_to_digital = true;
+            // DIGITAL is the first token for these, coming before the
+            // axis name; if we found DIGITAL, we need to read the next
+            // token for the actual axis.
+            command = getNextToken(NULL, " ", &saveptr);
+        }
+        else
+        {
+            map_analogue_to_digital = false;
+        }
 
         if (strcmp(command, "INCLUDE") == 0)
         {
@@ -218,7 +232,7 @@ JVSConfigStatus parseOutputMapping(char *path, OutputMappings *outputMappings)
         {
             jvsCapabilitiesFromString(&config.capabilities, getNextToken(NULL, " ", &saveptr));
         }
-        else if (command[11] == 'B')
+        else if (command[11] == 'B' || map_analogue_to_digital)
         {
             ControllerPlayer controllerPlayer = controllerPlayerFromString(getNextToken(NULL, " ", &saveptr));
             OutputMapping mapping = {
