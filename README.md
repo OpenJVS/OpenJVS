@@ -16,6 +16,7 @@ OpenJVS requires a USB RS485 dongle to communicate, and supports the following h
 | Chihiro                         | Working     | Yes                 |
 | Lindbergh                       | Working     | Yes                 |
 | Ringedge                        | Requires JVS Hat          | Yes                    |
+| Ringedge 2                      | Requires JVS Hat          | Yes                    |
 | Namco System 23 (Time Crisis 2) | Working     | Yes                 |
 | Namco System 256                | Working     | Yes                 |
 | Taito Type X+                   | Working     | Yes                 |
@@ -63,11 +64,11 @@ sudo ./build/openjvs [optional outside mapping name]
 To install for globally and run (from inside the root directory):
 
 ```
-sudo make install
+make install
 sudo openjvs [optional outside mapping name]
 ```
 
-All input devices are disabled by default and must be enabled explicitly, to see what devices are available type:
+All input devices are enabled by default and must be disabled explicitly, to see what devices are available type:
 
 ```
 sudo openjvs --list
@@ -84,6 +85,22 @@ sudo openjvs --disable sony-playstation-r-3-controller
 ```
 
 Each new device is seen as a new player. For example if you plug 2 playstation controllers in, they will be mapped to PLAYER 1 and PLAYER 2. This means you should disable controllers you don't want to use, as they will take up player space.
+
+## OpenJVS HAT
+
+To support the new OpenJVS Hat some new features have been added
+
+### Rotary
+
+If you'd like to use the rotary selector on the OpenJVS hat to select your game, simply edit `/etc/openjvs/config` and set the following:
+
+```
+DEFAULT_GAME rotary
+```
+
+A file located at `/etc/openjvs/rotary` will allow you to list up to 16 games which can be selected using the rotary selector on the hat. The first game in the list coresponds to position 0, and the second to position 1 and so on.
+
+Once you've made a change to the rotary position, you must restart OpenJVS for it to take effect.
 
 ## Mapping
 
@@ -273,3 +290,4 @@ SEGA_TYPE_3_IO
 NAMCO_JYU_IO
 NAMCO_V185_IO
 ```
+
