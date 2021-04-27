@@ -23,6 +23,7 @@ JVSCLIStatus printUsage()
     debug(0, "  --enable   Enables a new/all controller(s)\n");
     debug(0, "  --disable  Disables a new/all controller(s)\n");
     debug(0, "  --help     Displays this text\n");
+    debug(0, "  --debug    Runs in debug mode\n");
     debug(0, "  --version  Displays the OpenJVS Version\n");
     return JVS_CLI_STATUS_SUCCESS_CLOSE;
 }
@@ -37,7 +38,7 @@ JVSCLIStatus printUsage()
  **/
 JVSCLIStatus printVersion()
 {
-    debug(0, "3.3.2\n");
+    debug(0, "3.3.3\n");
     return JVS_CLI_STATUS_SUCCESS_CLOSE;
 }
 
@@ -263,6 +264,11 @@ JVSCLIStatus parseArguments(int argc, char **argv, char *map)
     else if (strcmp(argv[1], "--list") == 0)
     {
         return printListing();
+    }
+    else if (strcmp(argv[1], "--debug") == 0)
+    {
+        initDebug(1);
+        return JVS_CLI_STATUS_SUCCESS_CONTINUE;
     }
 
     // If none of these where found, the argument is unknown.

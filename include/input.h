@@ -7,6 +7,12 @@
 
 #define WIIMOTE_DEVICE_NAME "nintendo-wii-remote"
 #define WIIMOTE_DEVICE_NAME_IR "nintendo-wii-remote-ir"
+
+#define AIMTRAK_DEVICE_NAME "ultimarc-ultimarc"
+#define AIMTRAK_DEVICE_NAME_REMAP_JOYSTICK "ultimarc-ultimarc-joystick"
+#define AIMTRAK_DEVICE_NAME_REMAP_OUT_SCREEN "ultimarc-ultimarc-screen-out"
+#define AIMTRAK_DEVICE_NAME_REMAP_IN_SCREEN "ultimarc-ultimarc-screen-in"
+
 #define MAX_MAPPING 1024
 #define MAX_PATH 1024
 #define MAX_DEVICES 255

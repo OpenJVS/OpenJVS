@@ -7,6 +7,10 @@ int globalLevel = 0;
 int initDebug(int level)
 {
     globalLevel = level;
+    if (globalLevel > 0)
+    {
+        debug(0, "\nWarning: OpenJVS is running in debug mode. This will slow down the overall emulation\n\n");
+    }
     return 1;
 }
 
