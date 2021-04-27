@@ -6,6 +6,7 @@
 #define DEFAULT_CONFIG_PATH "/etc/openjvs/config"
 #define DEFAULT_DEVICE_MAPPING_PATH "/etc/openjvs/devices/"
 #define DEFAULT_GAME_MAPPING_PATH "/etc/openjvs/games/"
+#define DEFAULT_ROTARY_PATH "/etc/openjvs/rotary"
 
 #define MAX_PATH_LENGTH 1024
 #define MAX_LINE_LENGTH 1024
@@ -32,5 +33,6 @@ JVSConfig *getConfig();
 JVSConfigStatus parseConfig(char *path);
 JVSConfigStatus parseInputMapping(char *path, InputMappings *inputMappings);
 JVSConfigStatus parseOutputMapping(char *path, OutputMappings *inputMappings);
+JVSConfigStatus parseRotary(char *path, int rotary, char *output);
 
 #endif // CONFIG_H_

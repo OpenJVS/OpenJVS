@@ -47,17 +47,17 @@ int main(int argc, char **argv)
     break;
   }
 
+  // If rotary is selected as the default game, look for the rotary text file
   if (strcmp(localConfig->defaultGamePath, "rotary") == 0 || strcmp(localConfig->defaultGamePath, "ROTARY") == 0)
   {
     JVSRotaryStatus rotaryStatus = initRotary();
     if (rotaryStatus == JVS_ROTARY_STATUS_SUCCESS)
     {
-      printf("Pin rotary %d\n", getRotaryValue());
+      parseRotary(DEFAULT_ROTARY_PATH, getRotaryValue(), localConfig->defaultGamePath);
     }
   }
 
-  debug(0, "OpenJVS Version 3.3.3\n\n");
-  debug(0, "You are currently emulating a \033[0;31m%s\033[0m on %s.\n\n", localConfig->capabilities.displayName, localConfig->devicePath);
+  debug(0, "OpenJVS Version 3.4\n\n");
 
   if (initInputs(localConfig->defaultGamePath))
   {
@@ -66,7 +66,6 @@ int main(int argc, char **argv)
   }
 
   debug(0, "  Output:\t\t%s\n", localConfig->defaultGamePath);
-  debug(0, "\nDebug messages will appear below, you are in debug mode %d.\n\n", localConfig->debugLevel);
 
   /* Setup the JVS Emulator with the RS485 path and capabilities */
   if (!initJVS(localConfig->devicePath, &localConfig->capabilities))
@@ -74,6 +73,8 @@ int main(int argc, char **argv)
     debug(0, "Error: Could not initialise JVS\n");
     return EXIT_FAILURE;
   }
+
+  debug(0, "\nYou are currently emulating a \033[0;31m%s\033[0m on %s.\n\n", localConfig->capabilities.displayName, localConfig->devicePath);
 
   /* Process packets forever */
   JVSStatus processingStatus;

@@ -268,3 +268,33 @@ JVSConfigStatus parseOutputMapping(char *path, OutputMappings *outputMappings)
 
     return JVS_CONFIG_STATUS_SUCCESS;
 }
+
+JVSConfigStatus parseRotary(char *path, int rotary, char *output)
+{
+    FILE *file;
+
+    char *line = NULL;
+    size_t len = 0;
+    ssize_t read;
+
+    if ((file = fopen(path, "r")) == NULL)
+        return JVS_CONFIG_STATUS_FILE_NOT_FOUND;
+
+    int counter = 0;
+    char rotaryGames[16][MAX_LINE_LENGTH];
+
+    while ((read = getline(&line, &len, file)) != -1 && counter < 15)
+    {
+        strcpy(rotaryGames[counter], line);
+        counter++;
+    }
+
+    fclose(file);
+
+    if (line)
+        free(line);
+
+    strcpy(output, rotaryGames[rotary]);
+
+    return JVS_CONFIG_STATUS_SUCCESS;
+}
