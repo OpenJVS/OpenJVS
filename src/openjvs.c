@@ -2,14 +2,13 @@
 #include <signal.h>
 #include <string.h>
 
-#include "openjvs.h"
-
 #include "cli.h"
 #include "config.h"
 #include "debug.h"
 #include "input.h"
 #include "io.h"
 #include "jvs.h"
+#include "rotary.h"
 
 void handleSignal(int signal);
 
@@ -46,6 +45,15 @@ int main(int argc, char **argv)
     break;
   default:
     break;
+  }
+
+  if (strcmp(localConfig->defaultGamePath, "rotary") == 0 || strcmp(localConfig->defaultGamePath, "ROTARY") == 0)
+  {
+    JVSRotaryStatus rotaryStatus = initRotary();
+    if (rotaryStatus == JVS_ROTARY_STATUS_SUCCESS)
+    {
+      printf("Pin rotary %d\n", getRotaryValue());
+    }
   }
 
   debug(0, "OpenJVS Version 3.3.3\n\n");
