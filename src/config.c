@@ -283,9 +283,21 @@ JVSConfigStatus parseRotary(char *path, int rotary, char *output)
     int counter = 0;
     char rotaryGames[16][MAX_LINE_LENGTH];
 
-    while ((read = getline(&line, &len, file)) != -1 && counter < 15)
+    for (int i = 0; i < 16; i++)
+    {
+        strcpy(rotaryGames[i], "generic");
+    }
+
+    while ((read = getline(&line, &len, file)) != -1 && counter < 16)
     {
         strcpy(rotaryGames[counter], line);
+        for (size_t i = 0; i < strlen(line); i++)
+        {
+            if (rotaryGames[counter][i] == '\n' || rotaryGames[counter][i] == '\r')
+            {
+                rotaryGames[counter][i] = 0;
+            }
+        }
         counter++;
     }
 

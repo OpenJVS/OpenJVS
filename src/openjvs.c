@@ -48,12 +48,14 @@ int main(int argc, char **argv)
   }
 
   // If rotary is selected as the default game, look for the rotary text file
+  int rotaryValue = -1;
   if (strcmp(localConfig->defaultGamePath, "rotary") == 0 || strcmp(localConfig->defaultGamePath, "ROTARY") == 0)
   {
     JVSRotaryStatus rotaryStatus = initRotary();
     if (rotaryStatus == JVS_ROTARY_STATUS_SUCCESS)
     {
-      parseRotary(DEFAULT_ROTARY_PATH, getRotaryValue(), localConfig->defaultGamePath);
+      rotaryValue = getRotaryValue();
+      parseRotary(DEFAULT_ROTARY_PATH, rotaryValue, localConfig->defaultGamePath);
     }
   }
 
@@ -65,6 +67,8 @@ int main(int argc, char **argv)
     debug(0, "Try running `sudo openjvs --list` to see the devices\n");
   }
 
+  if (rotaryValue > -1)
+    debug(0, "  Rotary Position:\t%d\n", rotaryValue);
   debug(0, "  Output:\t\t%s\n", localConfig->defaultGamePath);
 
   /* Setup the JVS Emulator with the RS485 path and capabilities */
