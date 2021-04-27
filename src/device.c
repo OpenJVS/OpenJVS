@@ -189,6 +189,23 @@ int writeGPIO(int pin, int value)
   return 1;
 }
 
+int readGPIO(int pin)
+{
+  char path[100];
+  char value_str[3];
+  int fd;
+
+  snprintf(path, 100, "/sys/class/gpio/gpio%d/value", pin);
+  if ((fd = open(path, O_RDONLY)) == -1)
+    return -1;
+
+  if (read(fd, value_str, 3) == -1)
+    return -1;
+
+  close(fd);
+  return (atoi(value_str));
+}
+
 int setSenseLine(int state)
 {
   if (localSenseLineType == 0)
