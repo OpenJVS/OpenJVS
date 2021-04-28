@@ -270,7 +270,7 @@ Other mapping files can be included, so for example if a game is almost exactly 
 # Author: Bobby Dilley
 
 # Set the IO to emulate
-EMULATE SEGA_TYPE_3
+EMULATE sega-type-3
 
 # Include the generic driving file
 INCLUDE generic-driving
@@ -281,13 +281,4 @@ CONTROLLER_BUTTON_LEFT_BUMPER CONTROLLER_1 BUTTON_DOWN PLAYER_2
 
 ```
 
-As well as this the IO that should be emulated can be specified in the map file with the `EMULATE` keyword, these IOs are created in `input.h` and are from the following list.
-
-```
-IO TO EMULATE
--------------
-SEGA_TYPE_3_IO
-NAMCO_JYU_IO
-NAMCO_V185_IO
-```
-
+As well as this the IO that should be emulated can be specified in the map file with the `EMULATE` keyword, these IOs are defined in the `/etc/openjvs/ios` directory.
