@@ -124,18 +124,3 @@ JVSPlayer jvsPlayerFromString(char *jvsPlayerString)
 	debug(0, "Error: Could not find the JVS PLAYER string specified for %s\n", jvsPlayerString);
 	return -1;
 }
-
-int jvsCapabilitiesFromString(JVSCapabilities *capabilities, char *jvsCapabilitiesString)
-{
-	for (long unsigned int i = 0; i < sizeof(jvsCapabilitiesConversion) / sizeof(jvsCapabilitiesConversion[0]); i++)
-	{
-		if (strcmp(jvsCapabilitiesConversion[i].string, jvsCapabilitiesString) == 0)
-		{
-			memcpy(capabilities, &jvsCapabilitiesConversion[i].capabilities, sizeof(JVSCapabilities));
-			return 1;
-		}
-	}
-
-	debug(0, "Error: Could not find the JVS CAPABILITIES string specified for %s\n", jvsCapabilitiesString);
-	return 0;
-}

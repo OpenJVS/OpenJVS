@@ -39,6 +39,122 @@ struct MappingThreadArguments
     int player;
 };
 
+void *wiiDeviceThread(void *_args)
+{
+    struct MappingThreadArguments *args = (struct MappingThreadArguments *)_args;
+
+    int fd = open(args->devicePath, O_RDONLY);
+    if (fd < 0)
+    {
+        printf("Failed to open device descriptor");
+        return;
+    }
+
+    struct input_event event;
+    fd_set file_descriptor;
+    struct timeval tv;
+
+    /* Wii Remote Variables */
+    int x0 = 0, x1 = 0, y0 = 0, y1 = 0;
+
+    while (threadsRunning)
+    {
+        FD_ZERO(&file_descriptor);
+        FD_SET(fd, &file_descriptor);
+
+        tv.tv_sec = 0;
+        tv.tv_usec = 2 * 1000;
+
+        if (select(fd + 1, &file_descriptor, NULL, NULL, &tv) < 1)
+            continue;
+
+        if (read(fd, &event, sizeof(event)) == sizeof(event))
+        {
+            switch (event.type)
+            {
+            case EV_ABS:
+            {
+                bool outOfBounds = true;
+                if (event.type == EV_ABS)
+                {
+                    switch (event.code)
+                    {
+                    case 16:
+                        x0 = event.value;
+                        break;
+                    case 17:
+                        y0 = event.value;
+                        break;
+                    case 18:
+                        x1 = event.value;
+                        break;
+                    case 19:
+                        y1 = event.value;
+                        break;
+                    }
+                }
+
+                if ((x0 != 1023) && (x1 != 1023) && (y0 != 1023) && (y1 != 1023))
+                {
+                    /* Set screen in player 1 */
+                    setSwitch(args->player, args->inputs.key[KEY_O].output, 0);
+                    int oneX, oneY, twoX, twoY;
+                    if (x0 > x1)
+                    {
+                        oneY = y0;
+                        oneX = x0;
+                        twoY = y1;
+                        twoX = x1;
+                    }
+                    else
+                    {
+                        oneY = y1;
+                        oneX = x1;
+                        twoY = y0;
+                        twoX = x0;
+                    }
+
+                    /* Use some fancy maths that I don't understand fully */
+                    double valuex = 512 + cos(atan2(twoY - oneY, twoX - oneX) * -1) * (((oneX - twoX) / 2 + twoX) - 512) - sin(atan2(twoY - oneY, twoX - oneX) * -1) * (((oneY - twoY) / 2 + twoY) - 384);
+                    double valuey = 384 + sin(atan2(twoY - oneY, twoX - oneX) * -1) * (((oneX - twoX) / 2 + twoX) - 512) + cos(atan2(twoY - oneY, twoX - oneX) * -1) * (((oneY - twoY) / 2 + twoY) - 384);
+
+                    double finalX = (((double)valuex / (double)1023) * 1.0);
+                    double finalY = 1.0f - ((double)valuey / (double)1023);
+
+                    // check for out-of-bound after rotation ..
+                    if ((!(finalX > 1.0f) || (finalY > 1.0f) || (finalX < 0) || (finalY < 0)))
+                    {
+                        setAnalogue(args->inputs.abs[ABS_X].output, args->inputs.abs[ABS_X].reverse ? 1 - finalX : finalX);
+                        setAnalogue(args->inputs.abs[ABS_Y].output, args->inputs.abs[ABS_Y].reverse ? 1 - finalY : finalY);
+                        setGun(args->inputs.abs[ABS_X].output, args->inputs.abs[ABS_X].reverse ? 1 - finalX : finalX);
+                        setGun(args->inputs.abs[ABS_Y].output, args->inputs.abs[ABS_Y].reverse ? 1 - finalY : finalY);
+
+                        outOfBounds = false;
+                    }
+                }
+
+                if (outOfBounds)
+                {
+                    /* Set screen out player 1 */
+                    setSwitch(args->player, args->inputs.key[KEY_O].output, 1);
+
+                    setAnalogue(args->inputs.abs[ABS_X].output, 0);
+                    setAnalogue(args->inputs.abs[ABS_Y].output, 0);
+
+                    setGun(args->inputs.abs[ABS_X].output, 0);
+                    setGun(args->inputs.abs[ABS_Y].output, 0);
+                }
+                continue;
+            }
+            break;
+            }
+        }
+    }
+
+    close(fd);
+    free(args);
+}
+
 void *deviceThread(void *_args)
 {
     struct MappingThreadArguments *args = (struct MappingThreadArguments *)_args;
@@ -46,7 +162,6 @@ void *deviceThread(void *_args)
     EVInputs inputs;
     strcpy(devicePath, args->devicePath);
     memcpy(&inputs, &args->inputs, sizeof(EVInputs));
-    int wiiMode = args->wiiMode;
     int player = args->player;
     free(args);
 
@@ -88,36 +203,19 @@ void *deviceThread(void *_args)
     fd_set file_descriptor;
     struct timeval tv;
 
-    /* Wii Remote Variables */
-    int x0 = 0, x1 = 0, y0 = 0, y1 = 0;
-
     while (threadsRunning)
     {
-        bool data_to_read = false;
-
         FD_ZERO(&file_descriptor);
         FD_SET(fd, &file_descriptor);
 
-        /* set blocking timeout to TIMEOUT_SELECT */
         tv.tv_sec = 0;
         tv.tv_usec = 2 * 1000;
 
-        int n = select(fd + 1, &file_descriptor, NULL, NULL, &tv);
-        if (0 == n)
-        {
+        if (select(fd + 1, &file_descriptor, NULL, NULL, &tv) < 1)
             continue;
-        }
-        else if (n > 0)
-        {
-            if (FD_ISSET(fd, &file_descriptor))
-            {
-                data_to_read = true;
-            }
-        }
 
-        if (data_to_read && (sizeof(event) == read(fd, &event, sizeof(event))))
+        if (read(fd, &event, sizeof(event)) == sizeof(event))
         {
-
             switch (event.type)
             {
 
@@ -128,18 +226,17 @@ void *deviceThread(void *_args)
                 {
                     if (event.value == 1)
                         incrementCoin(inputs.key[event.code].jvsPlayer);
-                }
-                else
-                {
-                    setSwitch(inputs.key[event.code].jvsPlayer, inputs.key[event.code].output, event.value == 0 ? 0 : 1);
 
-                    if (inputs.key[event.code].outputSecondary != NONE)
-                    {
-                        setSwitch(inputs.key[event.code].jvsPlayer, inputs.key[event.code].outputSecondary, event.value == 0 ? 0 : 1);
-                    }
+                    continue;
                 }
+
+                setSwitch(inputs.key[event.code].jvsPlayer, inputs.key[event.code].output, event.value == 0 ? 0 : 1);
+
+                if (inputs.key[event.code].outputSecondary != NONE)
+                    setSwitch(inputs.key[event.code].jvsPlayer, inputs.key[event.code].outputSecondary, event.value == 0 ? 0 : 1);
             }
             break;
+
             case EV_ABS:
             {
                 /* Support HAT Controlls */
@@ -158,82 +255,6 @@ void *deviceThread(void *_args)
                     {
                         setSwitch(inputs.abs[event.code].jvsPlayer, inputs.abs[event.code].output, 0);
                         setSwitch(inputs.abs[event.code].jvsPlayer, inputs.abs[event.code].outputSecondary, 0);
-                    }
-                    continue;
-                }
-
-                /* Handle the wii remotes differently */
-                if (wiiMode)
-                {
-                    bool outOfBounds = true;
-                    if (event.type == EV_ABS)
-                    {
-                        switch (event.code)
-                        {
-                        case 16:
-                            x0 = event.value;
-                            break;
-                        case 17:
-                            y0 = event.value;
-                            break;
-                        case 18:
-                            x1 = event.value;
-                            break;
-                        case 19:
-                            y1 = event.value;
-                            break;
-                        }
-                    }
-
-                    if ((x0 != 1023) && (x1 != 1023) && (y0 != 1023) && (y1 != 1023))
-                    {
-                        /* Set screen in player 1 */
-                        setSwitch(player, inputs.key[KEY_O].output, 0);
-                        int oneX, oneY, twoX, twoY;
-                        if (x0 > x1)
-                        {
-                            oneY = y0;
-                            oneX = x0;
-                            twoY = y1;
-                            twoX = x1;
-                        }
-                        else
-                        {
-                            oneY = y1;
-                            oneX = x1;
-                            twoY = y0;
-                            twoX = x0;
-                        }
-
-                        /* Use some fancy maths that I don't understand fully */
-                        double valuex = 512 + cos(atan2(twoY - oneY, twoX - oneX) * -1) * (((oneX - twoX) / 2 + twoX) - 512) - sin(atan2(twoY - oneY, twoX - oneX) * -1) * (((oneY - twoY) / 2 + twoY) - 384);
-                        double valuey = 384 + sin(atan2(twoY - oneY, twoX - oneX) * -1) * (((oneX - twoX) / 2 + twoX) - 512) + cos(atan2(twoY - oneY, twoX - oneX) * -1) * (((oneY - twoY) / 2 + twoY) - 384);
-
-                        double finalX = (((double)valuex / (double)1023) * 1.0);
-                        double finalY = 1.0f - ((double)valuey / (double)1023);
-
-                        // check for out-of-bound after rotation ..
-                        if ((!(finalX > 1.0f) || (finalY > 1.0f) || (finalX < 0) || (finalY < 0)))
-                        {
-                            setAnalogue(inputs.abs[ABS_X].output, inputs.abs[ABS_X].reverse ? 1 - finalX : finalX);
-                            setAnalogue(inputs.abs[ABS_Y].output, inputs.abs[ABS_Y].reverse ? 1 - finalY : finalY);
-                            setGun(inputs.abs[ABS_X].output, inputs.abs[ABS_X].reverse ? 1 - finalX : finalX);
-                            setGun(inputs.abs[ABS_Y].output, inputs.abs[ABS_Y].reverse ? 1 - finalY : finalY);
-
-                            outOfBounds = false;
-                        }
-                    }
-
-                    if (outOfBounds)
-                    {
-                        /* Set screen out player 1 */
-                        setSwitch(player, inputs.key[KEY_O].output, 1);
-
-                        setAnalogue(inputs.abs[ABS_X].output, 0);
-                        setAnalogue(inputs.abs[ABS_Y].output, 0);
-
-                        setGun(inputs.abs[ABS_X].output, 0);
-                        setGun(inputs.abs[ABS_Y].output, 0);
                     }
                     continue;
                 }
@@ -265,15 +286,22 @@ void startThread(EVInputs *inputs, char *devicePath, int wiiMode, int player)
     struct MappingThreadArguments *args = malloc(sizeof(struct MappingThreadArguments));
     strcpy(args->devicePath, devicePath);
     memcpy(&args->inputs, inputs, sizeof(EVInputs));
-    args->wiiMode = wiiMode;
     args->player = player;
-    pthread_create(&threadID[threadCount], NULL, deviceThread, args);
+
+    if (args->wiiMode == 1)
+    {
+        pthread_create(&threadID[threadCount], NULL, wiiDeviceThread, args);
+    }
+    else
+    {
+        pthread_create(&threadID[threadCount], NULL, deviceThread, args);
+    }
+
     threadCount++;
 }
 
 void stopThreads()
 {
-    printf("Stopping threads\n");
     threadsRunning = 0;
     for (int i = 0; i < threadCount; i++)
     {
@@ -702,7 +730,7 @@ static int initInputsAimtrak(int *playerNumber, DeviceList *deviceList, OutputMa
     return error;
 }
 
-int initInputs(char *outputMappingPath)
+int initInputs(char *outputMappingPath, char *configPath)
 {
     int retval = 0;
     int playerNumber = 1;
@@ -717,7 +745,7 @@ int initInputs(char *outputMappingPath)
 
     if (retval == 0)
     {
-        if (parseOutputMapping(outputMappingPath, &outputMappings) != JVS_CONFIG_STATUS_SUCCESS)
+        if (parseOutputMapping(outputMappingPath, &outputMappings, configPath) != JVS_CONFIG_STATUS_SUCCESS)
         {
             debug(0, "Error: Cannot find an output mapping\n");
             retval = -1;

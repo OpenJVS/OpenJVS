@@ -5,7 +5,7 @@
 #include "cli.h"
 #include "config.h"
 #include "debug.h"
-#include "input.h"
+#include "controller/input.h"
 #include "io.h"
 #include "jvs.h"
 #include "rotary.h"
@@ -19,20 +19,20 @@ int main(int argc, char **argv)
   signal(SIGINT, handleSignal);
 
   /* Read the initial config */
-  if (parseConfig(DEFAULT_CONFIG_PATH) != JVS_CONFIG_STATUS_SUCCESS)
+  JVSConfig config;
+  if (parseConfig(DEFAULT_CONFIG_PATH, &config) != JVS_CONFIG_STATUS_SUCCESS)
   {
     printf("Warning: No valid config file found, a default is being used\n");
   }
-  JVSConfig *localConfig = getConfig();
 
   /* Initialise the debug output */
-  if (!initDebug(localConfig->debugLevel))
+  if (!initDebug(config.debugLevel))
   {
     printf("Failed to initialise debug output\n");
   }
 
   /* Get the correct game output mapping */
-  JVSCLIStatus argumentsStatus = parseArguments(argc, argv, localConfig->defaultGamePath);
+  JVSCLIStatus argumentsStatus = parseArguments(argc, argv, config.defaultGamePath);
   switch (argumentsStatus)
   {
   case JVS_CLI_STATUS_ERROR:
@@ -47,21 +47,21 @@ int main(int argc, char **argv)
     break;
   }
 
+  debug(0, "OpenJVS Version 3.4\n\n");
+
   // If rotary is selected as the default game, look for the rotary text file
   int rotaryValue = -1;
-  if (strcmp(localConfig->defaultGamePath, "rotary") == 0 || strcmp(localConfig->defaultGamePath, "ROTARY") == 0)
+  if (strcmp(config.defaultGamePath, "rotary") == 0 || strcmp(config.defaultGamePath, "ROTARY") == 0)
   {
     JVSRotaryStatus rotaryStatus = initRotary();
     if (rotaryStatus == JVS_ROTARY_STATUS_SUCCESS)
     {
       rotaryValue = getRotaryValue();
-      parseRotary(DEFAULT_ROTARY_PATH, rotaryValue, localConfig->defaultGamePath);
+      parseRotary(DEFAULT_ROTARY_PATH, rotaryValue, config.defaultGamePath);
     }
   }
 
-  debug(0, "OpenJVS Version 3.4\n\n");
-
-  if (initInputs(localConfig->defaultGamePath))
+  if (initInputs(config.defaultGamePath, config.capabilitiesPath))
   {
     debug(0, "Error: Could not initialise the inputs - make sure you are root\n");
     debug(0, "Try running `sudo openjvs --list` to see the devices\n");
@@ -69,22 +69,31 @@ int main(int argc, char **argv)
 
   if (rotaryValue > -1)
     debug(0, "  Rotary Position:\t%d\n", rotaryValue);
-  debug(0, "  Output:\t\t%s\n", localConfig->defaultGamePath);
+
+  debug(0, "  Output:\t\t%s\n", config.defaultGamePath);
+
+  // Grab the right IO
+  JVSIO jvsIO = {0};
+  jvsIO.deviceID = 1;
+  parseIO(config.capabilitiesPath, &jvsIO.capabilities);
+
+  debug(0, "\nYou are currently emulating a \033[0;31m%s\033[0m on %s.\n\n", jvsIO.capabilities.displayName, config.devicePath);
 
   /* Setup the JVS Emulator with the RS485 path and capabilities */
-  if (!initJVS(localConfig->devicePath, &localConfig->capabilities))
+  if (!initJVS(&jvsIO, &config))
   {
     debug(0, "Error: Could not initialise JVS\n");
     return EXIT_FAILURE;
   }
 
-  debug(0, "\nYou are currently emulating a \033[0;31m%s\033[0m on %s.\n\n", localConfig->capabilities.displayName, localConfig->devicePath);
+  debug(0, "\nYou are currently emulating a \033[0;31m%s\033[0m on %s.\n\n", jvsIO.capabilities.displayName, config.devicePath);
 
+  return 0;
   /* Process packets forever */
   JVSStatus processingStatus;
   while (running)
   {
-    processingStatus = processPacket();
+    processingStatus = processPacket(&jvsIO);
     switch (processingStatus)
     {
     case JVS_STATUS_ERROR_CHECKSUM:

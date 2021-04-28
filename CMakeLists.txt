@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 
 project(openjvs
         VERSION "3.4"
-	LANGUAGES "C"
+		LANGUAGES "C"
         DESCRIPTION "An emulator for arcade JVS I/O boards"
         HOMEPAGE_URL "https://github.com/OpenJVS"
 )
@@ -11,7 +11,7 @@ find_package(Threads REQUIRED)
 
 include_directories(${THREAD_INLCUDE_DIRS} ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR})
 
-FILE(GLOB Sources src/*.c) #Assume we want to include everything from src/
+FILE(GLOB_RECURSE Sources src/*.c) #Assume we want to include everything from src/
 
 add_executable( ${PROJECT_NAME} ${Sources} )
 

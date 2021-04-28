@@ -2372,7 +2372,7 @@ typedef struct
     OutputMapping key[MAX_EV_ITEMS];
 } EVInputs;
 
-int initInputs(char *outputMappingPath);
+int initInputs(char *outputMappingPath, char *configPath);
 int evDevFromString(char *evDevString);
 int getInputs(DeviceList *deviceList);
 ControllerInput controllerInputFromString(char *controllerInputString);

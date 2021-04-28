@@ -5,6 +5,7 @@
 #include <stdlib.h>
 
 #define JVS_MAX_STATE_SIZE 100
+#define MAX_JVS_NAME_SIZE 2048
 
 typedef enum
 {
@@ -142,7 +143,7 @@ typedef struct
 
 typedef struct
 {
-    char *name;
+    char name[MAX_JVS_NAME_SIZE];
     unsigned char commandVersion;
     unsigned char jvsVersion;
     unsigned char commsVersion;
@@ -166,77 +167,19 @@ typedef struct
     unsigned char displayOutEncodings;
     unsigned char backup;
     unsigned char rightAlignBits;
-    char *displayName;
+    char displayName[MAX_JVS_NAME_SIZE];
 } JVSCapabilities;
 
-/* Define the IO files here */
-static const JVSCapabilities SEGA_TYPE_3_IO = {
-    .name = "SEGA CORPORATION;I/O BD JVS;837-14572;Ver1.00;2005/10",
-    .commandVersion = 0x13,
-    .jvsVersion = 0x20,
-    .commsVersion = 0x10,
-    .players = 2,
-    .switches = 14,
-    .analogueInBits = 10,
-    .analogueInChannels = 8,
-    .generalPurposeOutputs = 20,
-    .coins = 2,
-    .rightAlignBits = 0,
-    .displayName = "Sega Type 3 IO"};
-
-static const JVSCapabilities SEGA_TYPE_1_IO = {
-    .name = "SEGA ENTERPRISESLTD.;I/O BD JVS;837-13551;Ver1.00;98/10",
-    .commandVersion = 0x11,
-    .jvsVersion = 0x20,
-    .commsVersion = 0x10,
-    .players = 2,
-    .switches = 13,
-    .analogueInBits = 10,
-    .analogueInChannels = 8,
-    .generalPurposeOutputs = 6,
-    .coins = 2,
-    .rightAlignBits = 0,
-    .displayName = "Sega Type 1 IO"};
-
-static const JVSCapabilities NAMCO_JYU_IO = {
-    .name = "namco ltd.;JYU-PCB;Ver1.00;JPN,2Coins 2Guns",
-    .players = 2,
-    .switches = 12,
-    .commandVersion = 0x11,
-    .jvsVersion = 0x20,
-    .commsVersion = 0x10,
-    .coins = 2,
-    .generalPurposeOutputs = 16,
-    .gunChannels = 2,
-    .gunXBits = 10,
-    .gunYBits = 10,
-    .rightAlignBits = 1,
-    .displayName = "Namco JYU IO"};
-
-static const JVSCapabilities NAMCO_V185_IO = {
-    .name = "namco ltd.;TSS-I/O;Ver2.02;JPN,GUN-EXTENTION",
-    .players = 1,
-    .switches = 12,
-    .commandVersion = 0x11,
-    .jvsVersion = 0x20,
-    .commsVersion = 0x10,
-    .coins = 1,
-    .generalPurposeOutputs = 3,
-    .gunChannels = 1,
-    .gunXBits = 10, // Should be 16
-    .gunYBits = 8,  // Should be 16
-    .rightAlignBits = 1,
-    .displayName = "Namco V185 IO (Time Crisis 2)"};
-
-static const struct
+typedef struct JVSIO
 {
-    const char *string;
-    const JVSCapabilities capabilities;
-} jvsCapabilitiesConversion[] = {
-    {"SEGA_TYPE_1_IO", SEGA_TYPE_1_IO},
-    {"SEGA_TYPE_3_IO", SEGA_TYPE_3_IO},
-    {"NAMCO_JYU_IO", NAMCO_JYU_IO},
-    {"NAMCO_V185_IO", NAMCO_V185_IO}};
+    int deviceID;
+    int analogueRestBits;
+    int gunXRestBits;
+    int gunYRestBits;
+    JVSState state;
+    JVSCapabilities capabilities;
+    struct JVSIO *chainedIO;
+} JVSIO;
 
 JVSCapabilities *getCapabilities();
 JVSState *getState();
@@ -250,5 +193,4 @@ int setRotary(JVSInput channel, int value);
 
 JVSInput jvsInputFromString(char *jvsInputString);
 JVSPlayer jvsPlayerFromString(char *jvsPlayerString);
-int jvsCapabilitiesFromString(JVSCapabilities *capabilities, char *jvsCapabilitiesString);
 #endif // IO_H_

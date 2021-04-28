@@ -22,21 +22,7 @@ char *getNextToken(char *buffer, char *seperator, char **saveptr)
     return token;
 }
 
-JVSConfig config = {
-    .senseLineType = 0,
-    .senseLinePin = 12,
-    .defaultGamePath = "generic",
-    .debugLevel = 0,
-    .devicePath = "/dev/ttyUSB0",
-    .capabilities = SEGA_TYPE_3_IO,
-};
-
-JVSConfig *getConfig()
-{
-    return &config;
-}
-
-JVSConfigStatus parseConfig(char *path)
+JVSConfigStatus parseConfig(char *path, JVSConfig *config)
 {
     FILE *file;
     char buffer[MAX_LINE_LENGTH];
@@ -44,6 +30,13 @@ JVSConfigStatus parseConfig(char *path)
 
     if ((file = fopen(path, "r")) == NULL)
         return JVS_CONFIG_STATUS_FILE_NOT_FOUND;
+
+    config->senseLineType = 0;
+    config->senseLinePin = 12;
+    config->debugLevel = 0;
+    strcpy(config->defaultGamePath, "generic");
+    strcpy(config->devicePath, "/dev/ttyUSB0");
+    strcpy(config->capabilitiesPath, "sega-type-3");
 
     while (fgets(buffer, MAX_LINE_LENGTH, file))
     {
@@ -54,26 +47,27 @@ JVSConfigStatus parseConfig(char *path)
 
         char *command = getNextToken(buffer, " ", &saveptr);
 
+        /* This will get overwritten! Need to do defaults somewhere else */
         if (strcmp(command, "INCLUDE") == 0)
-            parseConfig(getNextToken(NULL, " ", &saveptr));
+            parseConfig(getNextToken(NULL, " ", &saveptr), config);
 
         else if (strcmp(command, "SENSE_LINE_TYPE") == 0)
-            config.senseLineType = atoi(getNextToken(NULL, " ", &saveptr));
+            config->senseLineType = atoi(getNextToken(NULL, " ", &saveptr));
 
         else if (strcmp(command, "EMULATE") == 0)
-            jvsCapabilitiesFromString(&config.capabilities, getNextToken(NULL, " ", &saveptr));
+            strcpy(config->capabilitiesPath, getNextToken(NULL, " ", &saveptr));
 
         else if (strcmp(command, "SENSE_LINE_PIN") == 0)
-            config.senseLinePin = atoi(getNextToken(NULL, " ", &saveptr));
+            config->senseLinePin = atoi(getNextToken(NULL, " ", &saveptr));
 
         else if (strcmp(command, "DEFAULT_GAME") == 0)
-            strcpy(config.defaultGamePath, getNextToken(NULL, " ", &saveptr));
+            strcpy(config->defaultGamePath, getNextToken(NULL, " ", &saveptr));
 
         else if (strcmp(command, "DEBUG_MODE") == 0)
-            config.debugLevel = atoi(getNextToken(NULL, " ", &saveptr));
+            config->debugLevel = atoi(getNextToken(NULL, " ", &saveptr));
 
         else if (strcmp(command, "DEVICE_PATH") == 0)
-            strcpy(config.devicePath, getNextToken(NULL, " ", &saveptr));
+            strcpy(config->devicePath, getNextToken(NULL, " ", &saveptr));
 
         else
             printf("Error: Unknown configuration command %s\n", command);
@@ -185,7 +179,7 @@ JVSConfigStatus parseInputMapping(char *path, InputMappings *inputMappings)
     return JVS_CONFIG_STATUS_SUCCESS;
 }
 
-JVSConfigStatus parseOutputMapping(char *path, OutputMappings *outputMappings)
+JVSConfigStatus parseOutputMapping(char *path, OutputMappings *outputMappings, char *configPath)
 {
     FILE *file;
     char buffer[MAX_LINE_LENGTH];
@@ -210,13 +204,13 @@ JVSConfigStatus parseOutputMapping(char *path, OutputMappings *outputMappings)
         if (strcmp(command, "INCLUDE") == 0)
         {
             OutputMappings tempOutputMappings;
-            JVSConfigStatus status = parseOutputMapping(getNextToken(NULL, " ", &saveptr), &tempOutputMappings);
+            JVSConfigStatus status = parseOutputMapping(getNextToken(NULL, " ", &saveptr), &tempOutputMappings, configPath);
             if (status == JVS_CONFIG_STATUS_SUCCESS)
                 memcpy(outputMappings, &tempOutputMappings, sizeof(OutputMappings));
         }
         else if (strcmp(command, "EMULATE") == 0)
         {
-            jvsCapabilitiesFromString(&config.capabilities, getNextToken(NULL, " ", &saveptr));
+            strcpy(configPath, getNextToken(NULL, " ", &saveptr));
         }
         else if (command[11] == 'B')
         {
@@ -307,6 +301,112 @@ JVSConfigStatus parseRotary(char *path, int rotary, char *output)
         free(line);
 
     strcpy(output, rotaryGames[rotary]);
+
+    return JVS_CONFIG_STATUS_SUCCESS;
+}
+
+JVSConfigStatus parseIO(char *path, JVSCapabilities *capabilities)
+{
+    FILE *file;
+    char buffer[MAX_LINE_LENGTH];
+    char *saveptr = NULL;
+
+    char ioPath[MAX_PATH_LENGTH];
+    strcpy(ioPath, DEFAULT_IO_PATH);
+    strcat(ioPath, path);
+
+    if ((file = fopen(ioPath, "r")) == NULL)
+        return JVS_CONFIG_STATUS_FILE_NOT_FOUND;
+
+    while (fgets(buffer, MAX_LINE_LENGTH, file))
+    {
+
+        /* Check for comments */
+        if (buffer[0] == '#' || buffer[0] == 0 || buffer[0] == ' ' || buffer[0] == '\r' || buffer[0] == '\n')
+            continue;
+
+        char *command = getNextToken(buffer, " ", &saveptr);
+
+        if (strcmp(command, "DISPLAY_NAME") == 0)
+            strcpy(capabilities->displayName, getNextToken(NULL, "\n", &saveptr));
+
+        else if (strcmp(command, "NAME") == 0)
+            strcpy(capabilities->name, getNextToken(NULL, "\n", &saveptr));
+
+        else if (strcmp(command, "COMMAND_VERSION") == 0)
+            capabilities->commandVersion = atoi(getNextToken(NULL, " ", &saveptr));
+
+        else if (strcmp(command, "JVS_VERSION") == 0)
+            capabilities->jvsVersion = atoi(getNextToken(NULL, " ", &saveptr));
+
+        else if (strcmp(command, "COMMS_VERSION") == 0)
+            capabilities->commsVersion = atoi(getNextToken(NULL, " ", &saveptr));
+
+        else if (strcmp(command, "PLAYERS") == 0)
+            capabilities->players = atoi(getNextToken(NULL, " ", &saveptr));
+
+        else if (strcmp(command, "SWITCHES") == 0)
+            capabilities->switches = atoi(getNextToken(NULL, " ", &saveptr));
+
+        else if (strcmp(command, "COINS") == 0)
+            capabilities->coins = atoi(getNextToken(NULL, " ", &saveptr));
+
+        else if (strcmp(command, "ANALOGUE_IN_CHANNELS") == 0)
+            capabilities->analogueInChannels = atoi(getNextToken(NULL, " ", &saveptr));
+
+        else if (strcmp(command, "ANALOGUE_IN_BITS") == 0)
+            capabilities->analogueInBits = atoi(getNextToken(NULL, " ", &saveptr));
+
+        else if (strcmp(command, "ROTARY_CHANNELS") == 0)
+            capabilities->rotaryChannels = atoi(getNextToken(NULL, " ", &saveptr));
+
+        else if (strcmp(command, "KEYPAD") == 0)
+            capabilities->keypad = atoi(getNextToken(NULL, " ", &saveptr));
+
+        else if (strcmp(command, "GUN_CHANNELS") == 0)
+            capabilities->gunChannels = atoi(getNextToken(NULL, " ", &saveptr));
+
+        else if (strcmp(command, "GUN_X_BITS") == 0)
+            capabilities->gunXBits = atoi(getNextToken(NULL, " ", &saveptr));
+
+        else if (strcmp(command, "GUN_Y_BITS") == 0)
+            capabilities->gunYBits = atoi(getNextToken(NULL, " ", &saveptr));
+
+        else if (strcmp(command, "GENERAL_PURPOSE_INPUTS") == 0)
+            capabilities->generalPurposeInputs = atoi(getNextToken(NULL, " ", &saveptr));
+
+        else if (strcmp(command, "CARD") == 0)
+            capabilities->card = atoi(getNextToken(NULL, " ", &saveptr));
+
+        else if (strcmp(command, "HOPPER") == 0)
+            capabilities->hopper = atoi(getNextToken(NULL, " ", &saveptr));
+
+        else if (strcmp(command, "GENERAL_PURPOSE_OUTPUTS") == 0)
+            capabilities->generalPurposeOutputs = atoi(getNextToken(NULL, " ", &saveptr));
+
+        else if (strcmp(command, "ANALOGUE_OUT_CHANNELS") == 0)
+            capabilities->analogueOutChannels = atoi(getNextToken(NULL, " ", &saveptr));
+
+        else if (strcmp(command, "DISPLAY_OUT_ROWS") == 0)
+            capabilities->displayOutRows = atoi(getNextToken(NULL, " ", &saveptr));
+
+        else if (strcmp(command, "DISPLAY_OUT_COLUMNS") == 0)
+            capabilities->displayOutColumns = atoi(getNextToken(NULL, " ", &saveptr));
+
+        else if (strcmp(command, "DISPLAY_OUT_ENCODINGS") == 0)
+            capabilities->displayOutEncodings = atoi(getNextToken(NULL, " ", &saveptr));
+
+        else if (strcmp(command, "BACKUP") == 0)
+            capabilities->backup = atoi(getNextToken(NULL, " ", &saveptr));
+
+        else if (strcmp(command, "RIGHT_ALIGN_BITS") == 0)
+            capabilities->rightAlignBits = atoi(getNextToken(NULL, " ", &saveptr));
+
+        else
+            printf("Error: Unknown IO configuration command %s\n", command);
+    }
+
+    fclose(file);
 
     return JVS_CONFIG_STATUS_SUCCESS;
 }
