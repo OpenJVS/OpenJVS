@@ -4,49 +4,30 @@
 #include "io.h"
 #include "debug.h"
 
-JVSCapabilities capabilities;
-JVSState state;
-
-int analogueMax;
-int gunXMax;
-int gunYMax;
-
-JVSCapabilities *getCapabilities()
+int initIO(JVSIO *io)
 {
-	return &capabilities;
-}
+	for (int player = 0; player < (io->capabilities.players + 1); player++)
+		io->state.inputSwitch[player] = 0;
 
-JVSState *getState()
-{
-	return &state;
-}
+	for (int analogueChannels = 0; analogueChannels < io->capabilities.analogueInChannels; analogueChannels++)
+		io->state.analogueChannel[analogueChannels] = 0;
 
-int initIO(JVSCapabilities *capabilitiesSetup)
-{
-	memcpy(&capabilities, capabilitiesSetup, sizeof(JVSCapabilities));
+	for (int rotaryChannels = 0; rotaryChannels < io->capabilities.rotaryChannels; rotaryChannels++)
+		io->state.rotaryChannel[rotaryChannels] = 0;
 
-	for (int player = 0; player < (capabilities.players + 1); player++)
-		state.inputSwitch[player] = 0;
+	for (int player = 0; player < io->capabilities.coins; player++)
+		io->state.coinCount[player] = 0;
 
-	for (int analogueChannels = 0; analogueChannels < capabilities.analogueInChannels; analogueChannels++)
-		state.analogueChannel[analogueChannels] = 0;
-
-	for (int rotaryChannels = 0; rotaryChannels < capabilities.rotaryChannels; rotaryChannels++)
-		state.rotaryChannel[rotaryChannels] = 0;
-
-	for (int player = 0; player < capabilities.coins; player++)
-		state.coinCount[player] = 0;
-
-	analogueMax = pow(2, capabilities.analogueInBits) - 1;
-	gunXMax = pow(2, capabilities.gunXBits) - 1;
-	gunYMax = pow(2, capabilities.gunYBits) - 1;
+	io->analogueMax = pow(2, io->capabilities.analogueInBits) - 1;
+	io->gunXMax = pow(2, io->capabilities.gunXBits) - 1;
+	io->gunYMax = pow(2, io->capabilities.gunYBits) - 1;
 
 	return 1;
 }
 
-int setSwitch(JVSPlayer player, JVSInput switchNumber, int value)
+int setSwitch(JVSIO *io, JVSPlayer player, JVSInput switchNumber, int value)
 {
-	if (player > capabilities.players)
+	if (player > io->capabilities.players)
 	{
 		printf("Error: That player %d does not exist.\n", player);
 		return 0;
@@ -54,52 +35,52 @@ int setSwitch(JVSPlayer player, JVSInput switchNumber, int value)
 
 	if (value)
 	{
-		state.inputSwitch[player] |= switchNumber;
+		io->state.inputSwitch[player] |= switchNumber;
 	}
 	else
 	{
-		state.inputSwitch[player] &= ~switchNumber;
+		io->state.inputSwitch[player] &= ~switchNumber;
 	}
 
 	return 1;
 }
 
-int incrementCoin(JVSPlayer player)
+int incrementCoin(JVSIO *io, JVSPlayer player)
 {
 	if (player == SYSTEM)
 		return 0;
 
-	state.coinCount[player - 1]++;
+	io->state.coinCount[player - 1]++;
 	return 1;
 }
 
-int setAnalogue(JVSInput channel, double value)
+int setAnalogue(JVSIO *io, JVSInput channel, double value)
 {
-	if (channel >= capabilities.analogueInChannels)
+	if (channel >= io->capabilities.analogueInChannels)
 		return 0;
-	state.analogueChannel[channel] = (int)((double)value * (double)analogueMax);
+	io->state.analogueChannel[channel] = (int)((double)value * (double)io->analogueMax);
 	return 1;
 }
 
-int setGun(JVSInput channel, double value)
+int setGun(JVSIO *io, JVSInput channel, double value)
 {
 	if (channel % 2 == 0)
 	{
-		state.gunChannel[channel] = (int)((double)value * (double)gunXMax);
+		io->state.gunChannel[channel] = (int)((double)value * (double)io->gunXMax);
 	}
 	else
 	{
-		state.gunChannel[channel] = (int)((double)((double)1.0 - value) * (double)gunYMax);
+		io->state.gunChannel[channel] = (int)((double)((double)1.0 - value) * (double)io->gunYMax);
 	}
 	return 1;
 }
 
-int setRotary(JVSInput channel, int value)
+int setRotary(JVSIO *io, JVSInput channel, int value)
 {
-	if (channel >= capabilities.rotaryChannels)
+	if (channel >= io->capabilities.rotaryChannels)
 		return 0;
 
-	state.rotaryChannel[channel] = value;
+	io->state.rotaryChannel[channel] = value;
 	return 1;
 }
 

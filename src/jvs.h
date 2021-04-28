@@ -109,7 +109,7 @@ typedef enum
     JVS_STATUS_ERROR_UNSUPPORTED_COMMAND,
 } JVSStatus;
 
-int initJVS(JVSIO *jvsIO, JVSConfig *config);
+int initJVS(JVSIO *jvsIO);
 int disconnectJVS();
 
 JVSStatus processPacket(JVSIO *jvsIO);

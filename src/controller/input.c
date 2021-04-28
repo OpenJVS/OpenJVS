@@ -33,9 +33,9 @@ int threadsRunning = 1;
 
 struct MappingThreadArguments
 {
+    JVSIO *jvsIO;
     char devicePath[MAX_PATH_LENGTH];
     EVInputs inputs;
-    int wiiMode;
     int player;
 };
 
@@ -47,7 +47,7 @@ void *wiiDeviceThread(void *_args)
     if (fd < 0)
     {
         printf("Failed to open device descriptor");
-        return;
+        return 0;
     }
 
     struct input_event event;
@@ -97,7 +97,7 @@ void *wiiDeviceThread(void *_args)
                 if ((x0 != 1023) && (x1 != 1023) && (y0 != 1023) && (y1 != 1023))
                 {
                     /* Set screen in player 1 */
-                    setSwitch(args->player, args->inputs.key[KEY_O].output, 0);
+                    setSwitch(args->jvsIO, args->player, args->inputs.key[KEY_O].output, 0);
                     int oneX, oneY, twoX, twoY;
                     if (x0 > x1)
                     {
@@ -124,10 +124,10 @@ void *wiiDeviceThread(void *_args)
                     // check for out-of-bound after rotation ..
                     if ((!(finalX > 1.0f) || (finalY > 1.0f) || (finalX < 0) || (finalY < 0)))
                     {
-                        setAnalogue(args->inputs.abs[ABS_X].output, args->inputs.abs[ABS_X].reverse ? 1 - finalX : finalX);
-                        setAnalogue(args->inputs.abs[ABS_Y].output, args->inputs.abs[ABS_Y].reverse ? 1 - finalY : finalY);
-                        setGun(args->inputs.abs[ABS_X].output, args->inputs.abs[ABS_X].reverse ? 1 - finalX : finalX);
-                        setGun(args->inputs.abs[ABS_Y].output, args->inputs.abs[ABS_Y].reverse ? 1 - finalY : finalY);
+                        setAnalogue(args->jvsIO, args->inputs.abs[ABS_X].output, args->inputs.abs[ABS_X].reverse ? 1 - finalX : finalX);
+                        setAnalogue(args->jvsIO, args->inputs.abs[ABS_Y].output, args->inputs.abs[ABS_Y].reverse ? 1 - finalY : finalY);
+                        setGun(args->jvsIO, args->inputs.abs[ABS_X].output, args->inputs.abs[ABS_X].reverse ? 1 - finalX : finalX);
+                        setGun(args->jvsIO, args->inputs.abs[ABS_Y].output, args->inputs.abs[ABS_Y].reverse ? 1 - finalY : finalY);
 
                         outOfBounds = false;
                     }
@@ -136,13 +136,13 @@ void *wiiDeviceThread(void *_args)
                 if (outOfBounds)
                 {
                     /* Set screen out player 1 */
-                    setSwitch(args->player, args->inputs.key[KEY_O].output, 1);
+                    setSwitch(args->jvsIO, args->player, args->inputs.key[KEY_O].output, 1);
 
-                    setAnalogue(args->inputs.abs[ABS_X].output, 0);
-                    setAnalogue(args->inputs.abs[ABS_Y].output, 0);
+                    setAnalogue(args->jvsIO, args->inputs.abs[ABS_X].output, 0);
+                    setAnalogue(args->jvsIO, args->inputs.abs[ABS_Y].output, 0);
 
-                    setGun(args->inputs.abs[ABS_X].output, 0);
-                    setGun(args->inputs.abs[ABS_Y].output, 0);
+                    setGun(args->jvsIO, args->inputs.abs[ABS_X].output, 0);
+                    setGun(args->jvsIO, args->inputs.abs[ABS_Y].output, 0);
                 }
                 continue;
             }
@@ -153,6 +153,8 @@ void *wiiDeviceThread(void *_args)
 
     close(fd);
     free(args);
+
+    return 0;
 }
 
 void *deviceThread(void *_args)
@@ -162,7 +164,6 @@ void *deviceThread(void *_args)
     EVInputs inputs;
     strcpy(devicePath, args->devicePath);
     memcpy(&inputs, &args->inputs, sizeof(EVInputs));
-    int player = args->player;
     free(args);
 
     int fd;
@@ -225,15 +226,15 @@ void *deviceThread(void *_args)
                 if (inputs.key[event.code].output == COIN)
                 {
                     if (event.value == 1)
-                        incrementCoin(inputs.key[event.code].jvsPlayer);
+                        incrementCoin(args->jvsIO, inputs.key[event.code].jvsPlayer);
 
                     continue;
                 }
 
-                setSwitch(inputs.key[event.code].jvsPlayer, inputs.key[event.code].output, event.value == 0 ? 0 : 1);
+                setSwitch(args->jvsIO, inputs.key[event.code].jvsPlayer, inputs.key[event.code].output, event.value == 0 ? 0 : 1);
 
                 if (inputs.key[event.code].outputSecondary != NONE)
-                    setSwitch(inputs.key[event.code].jvsPlayer, inputs.key[event.code].outputSecondary, event.value == 0 ? 0 : 1);
+                    setSwitch(args->jvsIO, inputs.key[event.code].jvsPlayer, inputs.key[event.code].outputSecondary, event.value == 0 ? 0 : 1);
             }
             break;
 
@@ -245,16 +246,16 @@ void *deviceThread(void *_args)
 
                     if (event.value == inputs.absMin[event.code])
                     {
-                        setSwitch(inputs.abs[event.code].jvsPlayer, inputs.abs[event.code].output, 1);
+                        setSwitch(args->jvsIO, inputs.abs[event.code].jvsPlayer, inputs.abs[event.code].output, 1);
                     }
                     else if (event.value == inputs.absMax[event.code])
                     {
-                        setSwitch(inputs.abs[event.code].jvsPlayer, inputs.abs[event.code].outputSecondary, 1);
+                        setSwitch(args->jvsIO, inputs.abs[event.code].jvsPlayer, inputs.abs[event.code].outputSecondary, 1);
                     }
                     else
                     {
-                        setSwitch(inputs.abs[event.code].jvsPlayer, inputs.abs[event.code].output, 0);
-                        setSwitch(inputs.abs[event.code].jvsPlayer, inputs.abs[event.code].outputSecondary, 0);
+                        setSwitch(args->jvsIO, inputs.abs[event.code].jvsPlayer, inputs.abs[event.code].output, 0);
+                        setSwitch(args->jvsIO, inputs.abs[event.code].jvsPlayer, inputs.abs[event.code].outputSecondary, 0);
                     }
                     continue;
                 }
@@ -268,8 +269,8 @@ void *deviceThread(void *_args)
                     scaled = scaled > 1 ? 1 : scaled;
                     scaled = scaled < 0 ? 0 : scaled;
 
-                    setAnalogue(inputs.abs[event.code].output, inputs.abs[event.code].reverse ? 1 - scaled : scaled);
-                    setGun(inputs.abs[event.code].output, inputs.abs[event.code].reverse ? 1 - scaled : scaled);
+                    setAnalogue(args->jvsIO, inputs.abs[event.code].output, inputs.abs[event.code].reverse ? 1 - scaled : scaled);
+                    setGun(args->jvsIO, inputs.abs[event.code].output, inputs.abs[event.code].reverse ? 1 - scaled : scaled);
                 }
             }
             break;
@@ -281,14 +282,15 @@ void *deviceThread(void *_args)
 
     return 0;
 }
-void startThread(EVInputs *inputs, char *devicePath, int wiiMode, int player)
+void startThread(EVInputs *inputs, char *devicePath, int wiiMode, int player, JVSIO *jvsIO)
 {
     struct MappingThreadArguments *args = malloc(sizeof(struct MappingThreadArguments));
     strcpy(args->devicePath, devicePath);
     memcpy(&args->inputs, inputs, sizeof(EVInputs));
     args->player = player;
+    args->jvsIO = jvsIO;
 
-    if (args->wiiMode == 1)
+    if (wiiMode)
     {
         pthread_create(&threadID[threadCount], NULL, wiiDeviceThread, args);
     }
@@ -438,8 +440,8 @@ int getInputs(DeviceList *deviceList)
 
     deviceList->length = 0;
 
-    int numberOfDevices;
-    if ((numberOfDevices = scandir(DEV_INPUT_EVENT, &namelist, isEventDevice, alphasort)) < 1)
+    int numberOfDevices = scandir(DEV_INPUT_EVENT, &namelist, isEventDevice, alphasort);
+    if (numberOfDevices < 1)
     {
         debug(0, "Error: No devices found\n");
         return 0;
@@ -493,151 +495,87 @@ int getInputs(DeviceList *deviceList)
     return 1;
 }
 
-static int initInputsWiimote(int *playerNumber, DeviceList *deviceList, OutputMappings *outputMappings)
+static JVSInputStatus initInputsWiimote(int *playerNumber, DeviceList *deviceList, OutputMappings *outputMappings, JVSIO *jvsIO)
 {
-    /* Look for wiimote devices */
-    int error = 0;
-    int idx_ir = -1;
-    int idx_controls = -1;
+    int infraredDevice = -1;
+    int controlDevice = -1;
 
-    if (playerNumber == NULL)
+    for (int i = 0; i < deviceList->length; i++)
     {
-        error = -1;
-    }
+        InputMappings inputMappings;
+        inputMappings.length = 0;
 
-    if (error == 0)
-    {
-        if (deviceList == NULL)
+        EVInputs evInputs = {0};
+
+        if (strstr(deviceList->devices[i].name, WIIMOTE_DEVICE_NAME) == NULL)
+            continue;
+
+        if (strcmp(deviceList->devices[i].name, WIIMOTE_DEVICE_NAME_IR) == 0)
+            infraredDevice = i;
+
+        if (strcmp(deviceList->devices[i].name, WIIMOTE_DEVICE_NAME) == 0)
+            controlDevice = i;
+
+        if ((infraredDevice != -1) && (controlDevice != -1))
         {
-            error = -1;
-        }
-    }
-
-    if (error == 0)
-    {
-        if (outputMappings == NULL)
-        {
-            error = -1;
-        }
-    }
-
-    if (error == 0)
-    {
-        for (int i = 0; i < deviceList->length; i++)
-        {
-            InputMappings inputMappings;
-            inputMappings.length = 0;
-
-            EVInputs evInputs = (EVInputs){0};
-
-            if (NULL == strstr(deviceList->devices[i].name, WIIMOTE_DEVICE_NAME))
+            if (parseInputMapping(deviceList->devices[controlDevice].name, &inputMappings) != JVS_CONFIG_STATUS_SUCCESS || inputMappings.length == 0)
             {
+                printf("parseInputMapping was not successfully!\n");
+                infraredDevice = controlDevice = -1;
                 continue;
             }
-
-            if (strcmp(deviceList->devices[i].name, WIIMOTE_DEVICE_NAME_IR) == 0)
-            {
-                idx_ir = i;
-            }
-
-            if (strcmp(deviceList->devices[i].name, WIIMOTE_DEVICE_NAME) == 0)
-            {
-                idx_controls = i;
-            }
-
-            if ((idx_ir != -1) && (idx_controls != -1))
-            {
-                bool failed = false;
-
-                if (parseInputMapping(deviceList->devices[idx_controls].name, &inputMappings) != JVS_CONFIG_STATUS_SUCCESS || inputMappings.length == 0)
-                {
-                    failed = true;
-                    printf("parseInputMapping was not successfully!\n");
-                }
-
-                if (!failed)
-                {
-                    if (!processMappings(&inputMappings, outputMappings, &evInputs, (ControllerPlayer)*playerNumber))
-                    {
-                        failed = true;
-                        printf("Failed to process the mapping for %s\n", deviceList->devices[idx_controls].name);
-                    }
-                }
-
-                if (!failed)
-                {
-                    startThread(&evInputs, deviceList->devices[idx_ir].path, 1, *playerNumber);
-                    startThread(&evInputs, deviceList->devices[idx_controls].path, 0, *playerNumber);
-
-                    debug(0, "  Player %d:\t\t%s\n", *playerNumber, deviceList->devices[i].fullName);
-
-                    (*playerNumber)++;
-                }
-                idx_ir = idx_controls = -1;
-            }
-        }
-    }
-    return error;
-}
-
-static int initInputsNormalMapped(int *playerNumber, DeviceList *deviceList, OutputMappings *outputMappings)
-{
-    /* Look for all non-wiimote devices */
-
-    int error = 0;
-
-    if (playerNumber == NULL)
-    {
-        error = -1;
-    }
-
-    if (error == 0)
-    {
-        if (deviceList == NULL)
-        {
-            error = -1;
-        }
-    }
-
-    if (error == 0)
-    {
-        if (outputMappings == NULL)
-        {
-            error = -1;
-        }
-    }
-
-    if (error == 0)
-    {
-        for (int i = 0; i < deviceList->length; i++)
-        {
-            InputMappings inputMappings;
-            inputMappings.length = 0;
-
-            EVInputs evInputs = (EVInputs){0};
-
-            if (NULL != strstr(deviceList->devices[i].name, WIIMOTE_DEVICE_NAME))
-                continue;
-
-            if (NULL != strstr(deviceList->devices[i].name, AIMTRAK_DEVICE_NAME))
-                continue;
-
-            if (parseInputMapping(deviceList->devices[i].name, &inputMappings) != JVS_CONFIG_STATUS_SUCCESS || inputMappings.length == 0)
-                continue;
 
             if (!processMappings(&inputMappings, outputMappings, &evInputs, (ControllerPlayer)*playerNumber))
             {
-                printf("Failed to process the mapping for %s\n", deviceList->devices[i].name);
+                printf("Failed to process the mapping for %s\n", deviceList->devices[controlDevice].name);
+                infraredDevice = controlDevice = -1;
+                continue;
             }
-            else
-            {
-                startThread(&evInputs, deviceList->devices[i].path, 0, *playerNumber);
-                debug(0, "  Player %d:\t\t%s\n", *playerNumber, deviceList->devices[i].fullName);
-                (*playerNumber)++;
-            }
+
+            startThread(&evInputs, deviceList->devices[infraredDevice].path, 1, *playerNumber, jvsIO);
+            startThread(&evInputs, deviceList->devices[controlDevice].path, 0, *playerNumber, jvsIO);
+
+            debug(0, "  Player %d:\t\t%s\n", *playerNumber, deviceList->devices[i].fullName);
+
+            (*playerNumber)++;
+
+            infraredDevice = controlDevice = -1;
         }
     }
-    return error;
+
+    return JVS_INPUT_STATUS_SUCCESS;
+}
+
+static JVSInputStatus initInputsNormalMapped(int *playerNumber, DeviceList *deviceList, OutputMappings *outputMappings, JVSIO *jvsIO)
+{
+    for (int i = 0; i < deviceList->length; i++)
+    {
+        InputMappings inputMappings;
+        inputMappings.length = 0;
+
+        EVInputs evInputs = (EVInputs){0};
+
+        if (strstr(deviceList->devices[i].name, WIIMOTE_DEVICE_NAME) != NULL)
+            continue;
+
+        if (strstr(deviceList->devices[i].name, AIMTRAK_DEVICE_NAME) != NULL)
+            continue;
+
+        if (parseInputMapping(deviceList->devices[i].name, &inputMappings) != JVS_CONFIG_STATUS_SUCCESS || inputMappings.length == 0)
+            continue;
+
+        if (!processMappings(&inputMappings, outputMappings, &evInputs, (ControllerPlayer)*playerNumber))
+        {
+            printf("Failed to process the mapping for %s\n", deviceList->devices[i].name);
+            continue;
+        }
+
+        startThread(&evInputs, deviceList->devices[i].path, 0, *playerNumber, jvsIO);
+        debug(0, "  Player %d:\t\t%s\n", *playerNumber, deviceList->devices[i].fullName);
+        (*playerNumber)++;
+    }
+
+    return JVS_INPUT_STATUS_SUCCESS;
 }
 
 /* AIMTRAK SUPPORT:
@@ -651,124 +589,81 @@ static int initInputsNormalMapped(int *playerNumber, DeviceList *deviceList, Out
         - /etc/openjvs/devices/ultimarc-ultimarc-screen-in
     -> !!! 1 Aimtrak Gun is thus detected as 3 devices but for it must be mapped for 1 player
 */
-static int initInputsAimtrak(int *playerNumber, DeviceList *deviceList, OutputMappings *outputMappings)
+static JVSInputStatus initInputsAimtrak(int *playerNumber, DeviceList *deviceList, OutputMappings *outputMappings, JVSIO *jvsIO)
 {
-    /* Look for all non-wiimote devices */
 
-    int error = 0;
+    int cpRealAimtrakPlayer = *playerNumber;
+    char FirstDetectedAimtrak[128];
+    FirstDetectedAimtrak[0] = '\0';
 
-    if (playerNumber == NULL)
+    for (int i = 0; i < deviceList->length; i++)
     {
-        error = -1;
-    }
+        // Filter on Aimtrack device name
+        if (strstr(deviceList->devices[i].name, AIMTRAK_DEVICE_NAME) == NULL)
+            continue;
 
-    if (error == 0)
-    {
-        if (deviceList == NULL)
+        InputMappings inputMappings;
+        inputMappings.length = 0;
+
+        EVInputs evInputs = {0};
+
+        // Parse input device file, if not ok, continue with next device
+        if (parseInputMapping(deviceList->devices[i].name, &inputMappings) != JVS_CONFIG_STATUS_SUCCESS || inputMappings.length == 0)
+            continue;
+
+        //Increment Player number only when second occurence of first Aimtrak device is detected (i.e. ultimarc_iltimarc_joystick)
+        //goal is to map the 3 input devices on same output (player)
+        if ((strcmp(FirstDetectedAimtrak, deviceList->devices[i].name) == 0))
+            (*playerNumber)++;
+
+        if (!processMappings(&inputMappings, outputMappings, &evInputs, (ControllerPlayer)*playerNumber))
         {
-            error = -1;
+            printf("Failed to process the mapping %s (for %s)\n", deviceList->devices[i].name, deviceList->devices[i].name);
         }
-    }
-
-    if (error == 0)
-    {
-        if (outputMappings == NULL)
+        else
         {
-            error = -1;
-        }
-    }
+            startThread(&evInputs, deviceList->devices[i].path, 0, *playerNumber, jvsIO);
 
-    if (error == 0)
-    {
-        int cpRealAimtrakPlayer = *playerNumber;
-        char FirstDetectedAimtrak[128];
-        FirstDetectedAimtrak[0] = '\0';
-
-        for (int i = 0; i < deviceList->length; i++)
-        {
-            //filter on Aimtrack device name
-            if (NULL == strstr(deviceList->devices[i].name, AIMTRAK_DEVICE_NAME))
-                continue;
-
-            InputMappings inputMappings;
-            inputMappings.length = 0;
-
-            EVInputs evInputs = (EVInputs){0};
-
-            //parse input device file, if not ok, continue with next device
-            if (parseInputMapping(deviceList->devices[i].name, &inputMappings) != JVS_CONFIG_STATUS_SUCCESS || inputMappings.length == 0)
-                continue;
-
-            //Increment Player number only when second occurence of first Aimtrak device is detected (i.e. ultimarc_iltimarc_joystick)
-            //goal is to map the 3 input devices on same output (player)
-            if ((strcmp(FirstDetectedAimtrak, deviceList->devices[i].name) == 0))
-                (*playerNumber)++;
-
-            if (!processMappings(&inputMappings, outputMappings, &evInputs, (ControllerPlayer)*playerNumber))
+            // In case someone has connected 2 Aimtrak for instance, we never know :)
+            if (FirstDetectedAimtrak[0] == '\0' || (strcmp(FirstDetectedAimtrak, deviceList->devices[i].name) == 0))
             {
-                printf("Failed to process the mapping %s (for %s)\n", deviceList->devices[i].name, deviceList->devices[i].name);
+                debug(0, "  Player %d: %s (mapped as CONTROLLER_%d in output)\n", cpRealAimtrakPlayer, deviceList->devices[i].name, *playerNumber);
+                strcpy(FirstDetectedAimtrak, deviceList->devices[i].name);
             }
             else
             {
-                startThread(&evInputs, deviceList->devices[i].path, 0, *playerNumber);
-
-                //In case someone has connected 2 Aimtrak for instance, we never know :)
-                if (FirstDetectedAimtrak[0] == '\0' || (strcmp(FirstDetectedAimtrak, deviceList->devices[i].name) == 0))
-                {
-                    debug(0, "  Player %d: %s (mapped as CONTROLLER_%d in output)\n", cpRealAimtrakPlayer, deviceList->devices[i].name, *playerNumber);
-                    strcpy(FirstDetectedAimtrak, deviceList->devices[i].name);
-                }
-                else
-                {
-                    debug(0, "            %s  (mapped as CONTROLLER_%d in output)\n", deviceList->devices[i].name, *playerNumber);
-                }
+                debug(0, "            %s  (mapped as CONTROLLER_%d in output)\n", deviceList->devices[i].name, *playerNumber);
             }
-
-            cpRealAimtrakPlayer++;
         }
+
+        cpRealAimtrakPlayer++;
     }
-    return error;
+
+    return JVS_INPUT_STATUS_SUCCESS;
 }
 
-int initInputs(char *outputMappingPath, char *configPath)
+JVSInputStatus initInputs(char *outputMappingPath, char *configPath, JVSIO *jvsIO)
 {
-    int retval = 0;
-    int playerNumber = 1;
     DeviceList deviceList;
     OutputMappings outputMappings;
 
     if (!getInputs(&deviceList))
     {
         debug(0, "Error: Failed to open devices\n");
-        retval = -1;
+        return JVS_INPUT_STATUS_ERROR;
     }
 
-    if (retval == 0)
+    if (parseOutputMapping(outputMappingPath, &outputMappings, configPath) != JVS_CONFIG_STATUS_SUCCESS)
     {
-        if (parseOutputMapping(outputMappingPath, &outputMappings, configPath) != JVS_CONFIG_STATUS_SUCCESS)
-        {
-            debug(0, "Error: Cannot find an output mapping\n");
-            retval = -1;
-        }
+        debug(0, "Error: Cannot find an output mapping\n");
+        return JVS_INPUT_STATUS_ERROR;
     }
 
-    if (retval == 0)
-    {
-        /* Look for all non-wiimote devices */
-        retval = initInputsNormalMapped(&playerNumber, &deviceList, &outputMappings);
-    }
+    int playerNumber = 1;
 
-    if (retval == 0)
-    {
-        /* Look for wiimote devices */
-        retval = initInputsWiimote(&playerNumber, &deviceList, &outputMappings);
-    }
+    initInputsNormalMapped(&playerNumber, &deviceList, &outputMappings, jvsIO);
+    initInputsWiimote(&playerNumber, &deviceList, &outputMappings, jvsIO);
+    initInputsAimtrak(&playerNumber, &deviceList, &outputMappings, jvsIO);
 
-    if (retval == 0)
-    {
-        /* Look for aimtrak devices */
-        retval = initInputsAimtrak(&playerNumber, &deviceList, &outputMappings);
-    }
-
-    return retval;
+    return JVS_INPUT_STATUS_SUCCESS;
 }

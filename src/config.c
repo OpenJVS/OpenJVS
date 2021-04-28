@@ -31,13 +31,6 @@ JVSConfigStatus parseConfig(char *path, JVSConfig *config)
     if ((file = fopen(path, "r")) == NULL)
         return JVS_CONFIG_STATUS_FILE_NOT_FOUND;
 
-    config->senseLineType = 0;
-    config->senseLinePin = 12;
-    config->debugLevel = 0;
-    strcpy(config->defaultGamePath, "generic");
-    strcpy(config->devicePath, "/dev/ttyUSB0");
-    strcpy(config->capabilitiesPath, "sega-type-3");
-
     while (fgets(buffer, MAX_LINE_LENGTH, file))
     {
 

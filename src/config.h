@@ -30,7 +30,6 @@ typedef enum
     JVS_CONFIG_STATUS_PARSE_ERROR,
 } JVSConfigStatus;
 
-JVSConfig *getConfig();
 JVSConfigStatus parseConfig(char *path, JVSConfig *config);
 JVSConfigStatus parseInputMapping(char *path, InputMappings *inputMappings);
 JVSConfigStatus parseOutputMapping(char *path, OutputMappings *outputMappings, char *configPath);

@@ -2372,7 +2372,13 @@ typedef struct
     OutputMapping key[MAX_EV_ITEMS];
 } EVInputs;
 
-int initInputs(char *outputMappingPath, char *configPath);
+typedef enum
+{
+    JVS_INPUT_STATUS_ERROR,
+    JVS_INPUT_STATUS_SUCCESS
+} JVSInputStatus;
+
+JVSInputStatus initInputs(char *outputMappingPath, char *configPath, JVSIO *jvsIO);
 int evDevFromString(char *evDevString);
 int getInputs(DeviceList *deviceList);
 ControllerInput controllerInputFromString(char *controllerInputString);

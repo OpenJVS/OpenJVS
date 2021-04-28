@@ -176,6 +176,9 @@ typedef struct JVSIO
     int analogueRestBits;
     int gunXRestBits;
     int gunYRestBits;
+    int analogueMax;
+    int gunXMax;
+    int gunYMax;
     JVSState state;
     JVSCapabilities capabilities;
     struct JVSIO *chainedIO;
@@ -184,12 +187,12 @@ typedef struct JVSIO
 JVSCapabilities *getCapabilities();
 JVSState *getState();
 
-int initIO(JVSCapabilities *capabilitiesSetup);
-int setSwitch(JVSPlayer player, JVSInput switchNumber, int value);
-int incrementCoin(JVSPlayer player);
-int setAnalogue(JVSInput channel, double value);
-int setGun(JVSInput channel, double value);
-int setRotary(JVSInput channel, int value);
+int initIO(JVSIO *io);
+int setSwitch(JVSIO *io, JVSPlayer player, JVSInput switchNumber, int value);
+int incrementCoin(JVSIO *io, JVSPlayer player);
+int setAnalogue(JVSIO *io, JVSInput channel, double value);
+int setGun(JVSIO *io, JVSInput channel, double value);
+int setRotary(JVSIO *io, JVSInput channel, int value);
 
 JVSInput jvsInputFromString(char *jvsInputString);
 JVSPlayer jvsPlayerFromString(char *jvsPlayerString);
