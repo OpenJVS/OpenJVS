@@ -3,8 +3,6 @@
  * Authors: Bobby Dilley, Redone, Fred 
  */
 
-#include "input.h"
-
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -21,8 +19,9 @@
 #include <sys/select.h>
 #include <math.h>
 
-#include "debug.h"
-#include "config.h"
+#include "controller/input.h"
+#include "console/debug.h"
+#include "console/config.h"
 
 #define DEV_INPUT_EVENT "/dev/input"
 #define test_bit(bit, array) (array[bit / 8] & (1 << (bit % 8)))
@@ -502,11 +501,6 @@ static JVSInputStatus initInputsWiimote(int *playerNumber, DeviceList *deviceLis
 
     for (int i = 0; i < deviceList->length; i++)
     {
-        InputMappings inputMappings;
-        inputMappings.length = 0;
-
-        EVInputs evInputs = {0};
-
         if (strstr(deviceList->devices[i].name, WIIMOTE_DEVICE_NAME) == NULL)
             continue;
 
@@ -518,16 +512,18 @@ static JVSInputStatus initInputsWiimote(int *playerNumber, DeviceList *deviceLis
 
         if ((infraredDevice != -1) && (controlDevice != -1))
         {
+            InputMappings inputMappings = {0};
             if (parseInputMapping(deviceList->devices[controlDevice].name, &inputMappings) != JVS_CONFIG_STATUS_SUCCESS || inputMappings.length == 0)
             {
-                printf("parseInputMapping was not successfully!\n");
+                debug(0, "Error: Could not parse input mapping for Nintendo Wii Remote!\n");
                 infraredDevice = controlDevice = -1;
                 continue;
             }
 
+            EVInputs evInputs = {0};
             if (!processMappings(&inputMappings, outputMappings, &evInputs, (ControllerPlayer)*playerNumber))
             {
-                printf("Failed to process the mapping for %s\n", deviceList->devices[controlDevice].name);
+                debug(0, "Error: Failed to process the mapping for %s\n", deviceList->devices[controlDevice].name);
                 infraredDevice = controlDevice = -1;
                 continue;
             }
@@ -550,23 +546,20 @@ static JVSInputStatus initInputsNormalMapped(int *playerNumber, DeviceList *devi
 {
     for (int i = 0; i < deviceList->length; i++)
     {
-        InputMappings inputMappings;
-        inputMappings.length = 0;
-
-        EVInputs evInputs = (EVInputs){0};
-
         if (strstr(deviceList->devices[i].name, WIIMOTE_DEVICE_NAME) != NULL)
             continue;
 
         if (strstr(deviceList->devices[i].name, AIMTRAK_DEVICE_NAME) != NULL)
             continue;
 
+        InputMappings inputMappings = {0};
         if (parseInputMapping(deviceList->devices[i].name, &inputMappings) != JVS_CONFIG_STATUS_SUCCESS || inputMappings.length == 0)
             continue;
 
+        EVInputs evInputs = {0};
         if (!processMappings(&inputMappings, outputMappings, &evInputs, (ControllerPlayer)*playerNumber))
         {
-            printf("Failed to process the mapping for %s\n", deviceList->devices[i].name);
+            debug(0, "Failed to process the mapping for %s\n", deviceList->devices[i].name);
             continue;
         }
 
@@ -602,12 +595,8 @@ static JVSInputStatus initInputsAimtrak(int *playerNumber, DeviceList *deviceLis
         if (strstr(deviceList->devices[i].name, AIMTRAK_DEVICE_NAME) == NULL)
             continue;
 
-        InputMappings inputMappings;
-        inputMappings.length = 0;
-
-        EVInputs evInputs = {0};
-
         // Parse input device file, if not ok, continue with next device
+        InputMappings inputMappings = {0};
         if (parseInputMapping(deviceList->devices[i].name, &inputMappings) != JVS_CONFIG_STATUS_SUCCESS || inputMappings.length == 0)
             continue;
 
@@ -616,24 +605,25 @@ static JVSInputStatus initInputsAimtrak(int *playerNumber, DeviceList *deviceLis
         if ((strcmp(FirstDetectedAimtrak, deviceList->devices[i].name) == 0))
             (*playerNumber)++;
 
+        EVInputs evInputs = {0};
         if (!processMappings(&inputMappings, outputMappings, &evInputs, (ControllerPlayer)*playerNumber))
         {
-            printf("Failed to process the mapping %s (for %s)\n", deviceList->devices[i].name, deviceList->devices[i].name);
+            debug(0, "Error: Failed to process the mapping %s\n", deviceList->devices[i].name);
+            cpRealAimtrakPlayer++;
+            continue;
+        }
+
+        startThread(&evInputs, deviceList->devices[i].path, 0, *playerNumber, jvsIO);
+
+        // In case someone has connected 2 Aimtrak for instance, we never know :)
+        if (FirstDetectedAimtrak[0] == '\0' || (strcmp(FirstDetectedAimtrak, deviceList->devices[i].name) == 0))
+        {
+            debug(0, "  Player %d: %s (mapped as CONTROLLER_%d in output)\n", cpRealAimtrakPlayer, deviceList->devices[i].name, *playerNumber);
+            strcpy(FirstDetectedAimtrak, deviceList->devices[i].name);
         }
         else
         {
-            startThread(&evInputs, deviceList->devices[i].path, 0, *playerNumber, jvsIO);
-
-            // In case someone has connected 2 Aimtrak for instance, we never know :)
-            if (FirstDetectedAimtrak[0] == '\0' || (strcmp(FirstDetectedAimtrak, deviceList->devices[i].name) == 0))
-            {
-                debug(0, "  Player %d: %s (mapped as CONTROLLER_%d in output)\n", cpRealAimtrakPlayer, deviceList->devices[i].name, *playerNumber);
-                strcpy(FirstDetectedAimtrak, deviceList->devices[i].name);
-            }
-            else
-            {
-                debug(0, "            %s  (mapped as CONTROLLER_%d in output)\n", deviceList->devices[i].name, *playerNumber);
-            }
+            debug(0, "            %s  (mapped as CONTROLLER_%d in output)\n", deviceList->devices[i].name, *playerNumber);
         }
 
         cpRealAimtrakPlayer++;

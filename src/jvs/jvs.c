@@ -1,6 +1,6 @@
-#include "jvs.h"
-#include "device.h"
-#include "debug.h"
+#include "jvs/jvs.h"
+#include "hardware/device.h"
+#include "console/debug.h"
 
 #include <time.h>
 
@@ -20,8 +20,15 @@ unsigned char outputBuffer[JVS_MAX_PACKET_SIZE], inputBuffer[JVS_MAX_PACKET_SIZE
  * @param capabilitiesSetup The representation of the IO to emulate
  * @returns 1 if the device was initialised successfully, 0 otherwise.
  */
-int initJVS(JVSIO *jvsIO)
+int initJVS(JVSIO *jvsIO, JVSConfig *config)
 {
+	/* Init the connection to the Naomi */
+	if (!initDevice(config->devicePath, config->senseLineType, config->senseLinePin))
+	{
+		debug(0, "Critical: Failed to init the RS485 device at %s, you must be root.\n", config->devicePath);
+		return 0;
+	}
+
 	/* Calculate the alignments for analogue and gun channels, default is left */
 	if (!jvsIO->capabilities.rightAlignBits)
 	{
@@ -177,6 +184,11 @@ JVSStatus processPacket(JVSIO *jvsIO)
 			debug(1, "CMD_RESET\n");
 			size = 2;
 			jvsIO->deviceID = -1;
+			while (jvsIO->chainedIO != NULL)
+			{
+				jvsIO->deviceID = -1;
+				jvsIO = jvsIO->chainedIO;
+			}
 			setSenseLine(0);
 		}
 		break;

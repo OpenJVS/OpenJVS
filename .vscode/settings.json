@@ -9,7 +9,9 @@
         "typeinfo": "c",
         "array": "c",
         "cmath": "c",
-        "config.h": "c"
+        "config.h": "c",
+        "debug.h": "c",
+        "pthread.h": "c"
     },
     "editor.formatOnPaste": true,
     "editor.formatOnSave": true,

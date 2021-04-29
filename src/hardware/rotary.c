@@ -1,6 +1,6 @@
-#include "rotary.h"
-#include "device.h"
-#include "debug.h"
+#include "hardware/rotary.h"
+#include "hardware/device.h"
+#include "console/debug.h"
 
 /**
  * Init Rotary on Raspberry Pi HAT

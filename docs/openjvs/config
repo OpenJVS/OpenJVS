@@ -1,11 +1,8 @@
 # OpenJVS Config
-# 
-# This configuration file should generally not be touched
-# unless you know what you are doing.
-#
 # Author: Bobby Dilley
 
 # Setup the default game to emulate
+# Use ROTARY for the rotary controller on the HAT
 DEFAULT_GAME generic-driving
 
 # Setup which IO to emulate by default

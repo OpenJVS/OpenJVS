@@ -2,10 +2,10 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "cli.h"
+#include "console/cli.h"
 
-#include "config.h"
-#include "debug.h"
+#include "console/config.h"
+#include "console/debug.h"
 
 /**
  * Print usage information
@@ -183,9 +183,6 @@ JVSCLIStatus printListing()
     debug(0, "Enabled:\n");
     for (int i = 0; i < deviceList.length; i++)
     {
-        char disabledString[MAX_PATH_LENGTH];
-        strcpy(disabledString, deviceList.devices[i].name);
-        strcat(disabledString, ".disabled");
         int enabled = parseInputMapping(deviceList.devices[i].name, &inputMappings) == JVS_CONFIG_STATUS_SUCCESS;
         if (enabled)
         {

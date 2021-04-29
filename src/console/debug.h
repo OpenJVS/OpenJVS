@@ -1,7 +1,7 @@
 #ifndef DEBUG_H_
 #define DEBUG_H_
 
-#include "jvs.h"
+#include "jvs/jvs.h"
 
 int initDebug(int level);
 void debug(int level, const char *format, ...);

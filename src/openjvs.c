@@ -2,14 +2,15 @@
 #include <signal.h>
 #include <string.h>
 
-#include "cli.h"
-#include "config.h"
-#include "debug.h"
+#include "console/cli.h"
+#include "console/config.h"
+#include "console/debug.h"
 #include "controller/input.h"
-#include "io.h"
-#include "jvs.h"
-#include "rotary.h"
-#include "device.h"
+#include "hardware/device.h"
+#include "hardware/rotary.h"
+#include "jvs/io.h"
+#include "jvs/jvs.h"
+#include "ffb/ffb.h"
 
 void handleSignal(int signal);
 
@@ -21,22 +22,14 @@ int main(int argc, char **argv)
 
     /* Read the initial config */
     JVSConfig config;
-    config.senseLineType = 0;
-    config.senseLinePin = 12;
-    config.debugLevel = 0;
-    strcpy(config.defaultGamePath, "generic");
-    strcpy(config.devicePath, "/dev/ttyUSB0");
-    strcpy(config.capabilitiesPath, "sega-type-3");
+    getDefaultConfig(&config);
     if (parseConfig(DEFAULT_CONFIG_PATH, &config) != JVS_CONFIG_STATUS_SUCCESS)
     {
-        printf("Warning: No valid config file found, a default is being used\n");
+        printf("Warning: No valid config file found, defaults are being used\n");
     }
 
     /* Initialise the debug output */
-    if (!initDebug(config.debugLevel))
-    {
-        printf("Failed to initialise debug output\n");
-    }
+    initDebug(config.debugLevel);
 
     /* Get the correct game output mapping */
     JVSCLIStatus argumentsStatus = parseArguments(argc, argv, config.defaultGamePath);
@@ -68,15 +61,15 @@ int main(int argc, char **argv)
         }
     }
 
-    // Grab the right IO
-    JVSIO jvsIO = {0};
-    jvsIO.deviceID = 1;
+    // Create the JVSIO
+    JVSIO io = {0};
+    io.deviceID = 1;
 
-    JVSInputStatus inputStatus = initInputs(config.defaultGamePath, config.capabilitiesPath, &jvsIO);
+    JVSInputStatus inputStatus = initInputs(config.defaultGamePath, config.capabilitiesPath, &io);
     if (inputStatus != JVS_INPUT_STATUS_SUCCESS)
     {
-        debug(0, "Error: Could not initialise the inputs - make sure you are root\n");
-        debug(0, "Try running `sudo openjvs --list` to see the devices\n");
+        debug(0, "Critical: Could not initialise the inputs, you must be root.\n");
+        return EXIT_FAILURE;
     }
 
     if (rotaryValue > -1)
@@ -84,45 +77,45 @@ int main(int argc, char **argv)
 
     debug(0, "  Output:\t\t%s\n", config.defaultGamePath);
 
-    parseIO(config.capabilitiesPath, &jvsIO.capabilities);
-
-    debug(0, "\nYou are currently emulating a \033[0;31m%s\033[0m on %s.\n\n", jvsIO.capabilities.displayName, config.devicePath);
-
-    /* Init the Virtual IO */
-    if (!initIO(&jvsIO))
+    JVSConfigStatus ioStatus = parseIO(config.capabilitiesPath, &io.capabilities);
+    if (ioStatus != JVS_CONFIG_STATUS_SUCCESS)
     {
-        debug(0, "Failed to init IO\n");
+        switch (ioStatus)
+        {
+        case JVS_CONFIG_STATUS_FILE_NOT_FOUND:
+            debug(0, "Critical: Could not find IO definition named %s\n", config.capabilitiesPath);
+            break;
+        default:
+            debug(0, "Critical: Failed to parse an IO file.\n");
+        }
         return EXIT_FAILURE;
     }
 
-    /* Init the connection to the Naomi */
-    if (!initDevice(config.devicePath, config.senseLineType, config.senseLinePin))
+    /* Init the Virtual IO */
+    if (!initIO(&io))
     {
-        debug(0, "Failed to init device\n");
+        debug(0, "Critical: Failed to init IO\n");
         return EXIT_FAILURE;
     }
 
     /* Setup the JVS Emulator with the RS485 path and capabilities */
-    if (!initJVS(&jvsIO))
+    if (!initJVS(&io, &config))
     {
-        debug(0, "Error: Could not initialise JVS\n");
+        debug(0, "Critical: Could not initialise JVS\n");
         return EXIT_FAILURE;
     }
 
-    debug(0, "\nYou are currently emulating a \033[0;31m%s\033[0m on %s.\n\n", jvsIO.capabilities.displayName, config.devicePath);
+    debug(0, "\nYou are currently emulating a \033[0;31m%s\033[0m on %s.\n\n", io.capabilities.displayName, config.devicePath);
 
-    return 0;
     /* Process packets forever */
     JVSStatus processingStatus;
     while (running)
     {
-        processingStatus = processPacket(&jvsIO);
+        processingStatus = processPacket(&io);
         switch (processingStatus)
         {
         case JVS_STATUS_ERROR_CHECKSUM:
             debug(0, "Error: A checksum error occoured\n");
-            break;
-        case JVS_STATUS_ERROR_TIMEOUT:
             break;
         case JVS_STATUS_ERROR_WRITE_FAIL:
             debug(0, "Error: A write failure occoured\n");
@@ -138,7 +131,7 @@ int main(int argc, char **argv)
     /* Close the file pointer */
     if (!disconnectJVS())
     {
-        debug(0, "Error: Could not disconnect from serial\n");
+        debug(0, "Critical: Could not disconnect from serial\n");
         return EXIT_FAILURE;
     }
 
@@ -149,7 +142,7 @@ void handleSignal(int signal)
 {
     if (signal == 2)
     {
-        debug(0, "\nClosing down OpenJVS...\n");
+        debug(0, "\nWarning: OpenJVS is shutting down\n");
         running = 0;
     }
 }

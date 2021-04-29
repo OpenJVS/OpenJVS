@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "io.h"
+#include "jvs/io.h"
 
 char *getNextToken(char *buffer, char *seperator, char **saveptr)
 {
@@ -20,6 +20,17 @@ char *getNextToken(char *buffer, char *seperator, char **saveptr)
         }
     }
     return token;
+}
+
+JVSConfigStatus getDefaultConfig(JVSConfig *config)
+{
+    config->senseLineType = DEFAULT_SENSE_LINE_TYPE;
+    config->senseLinePin = DEFAULT_SENSE_LINE_PIN;
+    config->debugLevel = DEFAULT_DEBUG_LEVEL;
+    strcpy(config->defaultGamePath, DEFAULT_GAME);
+    strcpy(config->devicePath, DEFAULT_DEVICE_PATH);
+    strcpy(config->capabilitiesPath, DEFAULT_IO);
+    return JVS_CONFIG_STATUS_SUCCESS;
 }
 
 JVSConfigStatus parseConfig(char *path, JVSConfig *config)

@@ -5,7 +5,7 @@
 INCLUDE generic-shooting
 
 # Emulate the Namco JYU IO that came with Ninja Assault
-EMULATE NAMCO_JYU_IO
+EMULATE namco-jyu
 
 # Start Buttons
 CONTROLLER_BUTTON_START CONTROLLER_1 BUTTON_3 PLAYER_1

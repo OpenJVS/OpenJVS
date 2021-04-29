@@ -1,8 +1,8 @@
 #include <string.h>
 #include <math.h>
 
-#include "io.h"
-#include "debug.h"
+#include "jvs/io.h"
+#include "console/debug.h"
 
 int initIO(JVSIO *io)
 {

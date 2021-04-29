@@ -3,7 +3,7 @@
 
 #include <linux/input.h>
 
-#include "io.h"
+#include "jvs/io.h"
 
 #define WIIMOTE_DEVICE_NAME "nintendo-wii-remote"
 #define WIIMOTE_DEVICE_NAME_IR "nintendo-wii-remote-ir"
