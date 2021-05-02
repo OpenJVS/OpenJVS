@@ -297,12 +297,16 @@ JVSConfigStatus parseRotary(char *path, int rotary, char *output)
             }
         }
         counter++;
+
+        if (line)
+        {
+            free(line);
+            line = NULL;
+            len = 0;
+        }
     }
 
     fclose(file);
-
-    if (line)
-        free(line);
 
     strcpy(output, rotaryGames[rotary]);
 

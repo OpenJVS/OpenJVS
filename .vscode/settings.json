@@ -13,7 +13,8 @@
         "debug.h": "c",
         "pthread.h": "c",
         "stdbool.h": "c",
-        "string.h": "c"
+        "string.h": "c",
+        "rotary.h": "c"
     },
     "editor.formatOnPaste": true,
     "editor.formatOnSave": true,

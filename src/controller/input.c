@@ -22,6 +22,7 @@
 #include "controller/input.h"
 #include "console/debug.h"
 #include "console/config.h"
+#include "controller/threading.h"
 
 #define BITS_PER_LONG (sizeof(long) * 8)
 #define NBITS(x) ((((x)-1) / BITS_PER_LONG) + 1)
@@ -32,21 +33,18 @@
 #define DEV_INPUT_EVENT "/dev/input"
 #define test_bit(bit, array) (array[bit / 8] & (1 << (bit % 8)))
 
-pthread_t threadID[256];
-int threadCount = 0;
-int threadsRunning = 1;
-
-struct MappingThreadArguments
+typedef struct
 {
+    ThreadSharedData *sharedData_p;
     JVSIO *jvsIO;
     char devicePath[MAX_PATH_LENGTH];
     EVInputs inputs;
     int player;
-};
+} MappingThreadArguments;
 
 void *wiiDeviceThread(void *_args)
 {
-    struct MappingThreadArguments *args = (struct MappingThreadArguments *)_args;
+    MappingThreadArguments *args = (MappingThreadArguments *)_args;
 
     int fd = open(args->devicePath, O_RDONLY);
     if (fd < 0)
@@ -62,7 +60,7 @@ void *wiiDeviceThread(void *_args)
     /* Wii Remote Variables */
     int x0 = 0, x1 = 0, y0 = 0, y1 = 0;
 
-    while (threadsRunning)
+    while (getThreadsRunning())
     {
         FD_ZERO(&file_descriptor);
         FD_SET(fd, &file_descriptor);
@@ -164,18 +162,14 @@ void *wiiDeviceThread(void *_args)
 
 void *deviceThread(void *_args)
 {
-    struct MappingThreadArguments *args = (struct MappingThreadArguments *)_args;
-    char devicePath[MAX_PATH_LENGTH];
-    EVInputs inputs;
-    strcpy(devicePath, args->devicePath);
-    memcpy(&inputs, &args->inputs, sizeof(EVInputs));
-    free(args);
+    MappingThreadArguments *args = (MappingThreadArguments *)_args;
 
-    int fd;
-    if ((fd = open(devicePath, O_RDONLY)) < 0)
+    int fd = open(args->devicePath, O_RDONLY);
+    if (fd < 0)
     {
-        printf("mapping.c:initDevice(): Failed to open device file descriptor:%d \n", fd);
-        exit(-1);
+        printf("Critical: Failed to open device file descriptor %d \n", fd);
+        free(args);
+        return 0;
     }
 
     struct input_event event;
@@ -201,15 +195,15 @@ void *deviceThread(void *_args)
             {
                 perror("evdev EVIOCGABS ioctl");
             }
-            inputs.absMax[axisIndex] = (double)absoluteFeatures.maximum;
-            inputs.absMin[axisIndex] = (double)absoluteFeatures.minimum;
+            args->inputs.absMax[axisIndex] = (double)absoluteFeatures.maximum;
+            args->inputs.absMin[axisIndex] = (double)absoluteFeatures.minimum;
         }
     }
 
     fd_set file_descriptor;
     struct timeval tv;
 
-    while (threadsRunning)
+    while (getThreadsRunning())
     {
         FD_ZERO(&file_descriptor);
         FD_SET(fd, &file_descriptor);
@@ -228,54 +222,54 @@ void *deviceThread(void *_args)
             case EV_KEY:
             {
                 /* Check if the coin button has been pressed */
-                if (inputs.key[event.code].output == COIN)
+                if (args->inputs.key[event.code].output == COIN)
                 {
                     if (event.value == 1)
-                        incrementCoin(args->jvsIO, inputs.key[event.code].jvsPlayer);
+                        incrementCoin(args->jvsIO, args->inputs.key[event.code].jvsPlayer);
 
                     continue;
                 }
 
-                setSwitch(args->jvsIO, inputs.key[event.code].jvsPlayer, inputs.key[event.code].output, event.value == 0 ? 0 : 1);
+                setSwitch(args->jvsIO, args->inputs.key[event.code].jvsPlayer, args->inputs.key[event.code].output, event.value == 0 ? 0 : 1);
 
-                if (inputs.key[event.code].outputSecondary != NONE)
-                    setSwitch(args->jvsIO, inputs.key[event.code].jvsPlayer, inputs.key[event.code].outputSecondary, event.value == 0 ? 0 : 1);
+                if (args->inputs.key[event.code].outputSecondary != NONE)
+                    setSwitch(args->jvsIO, args->inputs.key[event.code].jvsPlayer, args->inputs.key[event.code].outputSecondary, event.value == 0 ? 0 : 1);
             }
             break;
 
             case EV_ABS:
             {
                 /* Support HAT Controlls */
-                if (inputs.abs[event.code].type == HAT)
+                if (args->inputs.abs[event.code].type == HAT)
                 {
 
-                    if (event.value == inputs.absMin[event.code])
+                    if (event.value == args->inputs.absMin[event.code])
                     {
-                        setSwitch(args->jvsIO, inputs.abs[event.code].jvsPlayer, inputs.abs[event.code].output, 1);
+                        setSwitch(args->jvsIO, args->inputs.abs[event.code].jvsPlayer, args->inputs.abs[event.code].output, 1);
                     }
-                    else if (event.value == inputs.absMax[event.code])
+                    else if (event.value == args->inputs.absMax[event.code])
                     {
-                        setSwitch(args->jvsIO, inputs.abs[event.code].jvsPlayer, inputs.abs[event.code].outputSecondary, 1);
+                        setSwitch(args->jvsIO, args->inputs.abs[event.code].jvsPlayer, args->inputs.abs[event.code].outputSecondary, 1);
                     }
                     else
                     {
-                        setSwitch(args->jvsIO, inputs.abs[event.code].jvsPlayer, inputs.abs[event.code].output, 0);
-                        setSwitch(args->jvsIO, inputs.abs[event.code].jvsPlayer, inputs.abs[event.code].outputSecondary, 0);
+                        setSwitch(args->jvsIO, args->inputs.abs[event.code].jvsPlayer, args->inputs.abs[event.code].output, 0);
+                        setSwitch(args->jvsIO, args->inputs.abs[event.code].jvsPlayer, args->inputs.abs[event.code].outputSecondary, 0);
                     }
                     continue;
                 }
 
                 /* Handle normally mapped analogue controls */
-                if (inputs.absEnabled[event.code])
+                if (args->inputs.absEnabled[event.code])
                 {
-                    double scaled = ((double)((double)event.value * (double)inputs.absMultiplier[event.code]) - inputs.absMin[event.code]) / (inputs.absMax[event.code] - inputs.absMin[event.code]);
+                    double scaled = ((double)((double)event.value * (double)args->inputs.absMultiplier[event.code]) - args->inputs.absMin[event.code]) / (args->inputs.absMax[event.code] - args->inputs.absMin[event.code]);
 
                     /* Make sure it doesn't go over 1 or below 0 if its multiplied */
                     scaled = scaled > 1 ? 1 : scaled;
                     scaled = scaled < 0 ? 0 : scaled;
 
-                    setAnalogue(args->jvsIO, inputs.abs[event.code].output, inputs.abs[event.code].reverse ? 1 - scaled : scaled);
-                    setGun(args->jvsIO, inputs.abs[event.code].output, inputs.abs[event.code].reverse ? 1 - scaled : scaled);
+                    setAnalogue(args->jvsIO, args->inputs.abs[event.code].output, args->inputs.abs[event.code].reverse ? 1 - scaled : scaled);
+                    setGun(args->jvsIO, args->inputs.abs[event.code].output, args->inputs.abs[event.code].reverse ? 1 - scaled : scaled);
                 }
             }
             break;
@@ -284,12 +278,13 @@ void *deviceThread(void *_args)
     }
 
     close(fd);
+    free(args);
 
     return 0;
 }
 void startThread(EVInputs *inputs, char *devicePath, int wiiMode, int player, JVSIO *jvsIO)
 {
-    struct MappingThreadArguments *args = malloc(sizeof(struct MappingThreadArguments));
+    MappingThreadArguments *args = malloc(sizeof(MappingThreadArguments));
     strcpy(args->devicePath, devicePath);
     memcpy(&args->inputs, inputs, sizeof(EVInputs));
     args->player = player;
@@ -297,22 +292,11 @@ void startThread(EVInputs *inputs, char *devicePath, int wiiMode, int player, JV
 
     if (wiiMode)
     {
-        pthread_create(&threadID[threadCount], NULL, wiiDeviceThread, args);
+        createThread(wiiDeviceThread, args);
     }
     else
     {
-        pthread_create(&threadID[threadCount], NULL, deviceThread, args);
-    }
-
-    threadCount++;
-}
-
-void stopThreads()
-{
-    threadsRunning = 0;
-    for (int i = 0; i < threadCount; i++)
-    {
-        pthread_join(threadID[i], NULL);
+        createThread(deviceThread, args);
     }
 }
 
@@ -446,7 +430,6 @@ int getInputs(DeviceList *deviceList)
     deviceList->length = scandir(DEV_INPUT_EVENT, &namelist, isEventDevice, alphasort);
     if (deviceList->length < 1)
     {
-        debug(0, "Error: No devices found\n");
         return 0;
     }
 
@@ -491,19 +474,21 @@ int getInputs(DeviceList *deviceList)
         memset(bit, 0, sizeof(bit));
         ioctl(device, EVIOCGBIT(0, EV_MAX), bit[0]);
 
+        // If it does repeating events and key events, it's probably a keyboard.
         if (test_bit_diff(EV_REP, bit[0]) && test_bit_diff(EV_KEY, bit[0]))
         {
             deviceList->devices[i].type = DEVICE_TYPE_KEYBOARD;
         }
 
+        // Relative events means its a mouse!
         if (test_bit_diff(EV_REL, bit[0]))
         {
             deviceList->devices[i].type = DEVICE_TYPE_MOUSE;
         }
 
+        // If it has a start button then it's probably a joystick!
         if (test_bit_diff(EV_KEY, bit[0]))
         {
-            printf("Found joystick %s\n", deviceList->devices[i].fullName);
             ioctl(device, EVIOCGBIT(EV_KEY, KEY_MAX), bit[EV_KEY]);
             if (test_bit_diff(BTN_START, bit[EV_KEY]))
             {
@@ -598,12 +583,12 @@ static JVSInputStatus initInputsNormalMapped(int *playerNumber, DeviceList *devi
             case DEVICE_TYPE_JOYSTICK:
                 if (parseInputMapping("generic-joystick", &inputMappings) != JVS_CONFIG_STATUS_SUCCESS || inputMappings.length == 0)
                     continue;
-                strcpy(specialMap, " using Generic Joystick Map");
+                strcpy(specialMap, " (Generic Joystick Map)");
                 break;
             case DEVICE_TYPE_KEYBOARD:
                 if (parseInputMapping("generic-keyboard", &inputMappings) != JVS_CONFIG_STATUS_SUCCESS || inputMappings.length == 0)
                     continue;
-                strcpy(specialMap, " using Generic Keyboard Map");
+                strcpy(specialMap, " (Generic Keyboard Map)");
                 break;
             default:
                 continue;
@@ -618,9 +603,10 @@ static JVSInputStatus initInputsNormalMapped(int *playerNumber, DeviceList *devi
         }
 
         startThread(&evInputs, deviceList->devices[i].path, 0, *playerNumber, jvsIO);
-        debug(0, "  Player %d:\t\t%s%s\n", *playerNumber, deviceList->devices[i].fullName, specialMap);
+        debug(0, "  Player %d:\t\t%s%s\n", *playerNumber, deviceList->devices[i].name, specialMap);
         (*playerNumber)++;
     }
+
     return JVS_INPUT_STATUS_SUCCESS;
 }
 
