@@ -475,7 +475,7 @@ int getInputs(DeviceList *deviceList)
         ioctl(device, EVIOCGBIT(0, EV_MAX), bit[0]);
 
         // If it does repeating events and key events, it's probably a keyboard.
-        if (test_bit_diff(EV_REP, bit[0]) && test_bit_diff(EV_KEY, bit[0]))
+        if (!test_bit_diff(EV_ABS, bit[0]) && test_bit_diff(EV_REP, bit[0]) && test_bit_diff(EV_KEY, bit[0]))
         {
             deviceList->devices[i].type = DEVICE_TYPE_KEYBOARD;
         }
@@ -673,8 +673,8 @@ static JVSInputStatus initInputsAimtrak(int *playerNumber, DeviceList *deviceLis
 
 JVSInputStatus initInputs(char *outputMappingPath, char *configPath, JVSIO *jvsIO)
 {
-    DeviceList deviceList;
-    OutputMappings outputMappings;
+    DeviceList deviceList = {0};
+    OutputMappings outputMappings = {0};
 
     if (!getInputs(&deviceList))
     {

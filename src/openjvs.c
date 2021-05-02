@@ -77,6 +77,7 @@ int main(int argc, char **argv)
         /* Init the watchdog to check the rotary and inputs */
         debug(1, "Init watchdog");
         running = 1;
+        setThreadsRunning(1);
         initWatchdog(&running, rotaryStatus);
 
         if (rotaryStatus == JVS_ROTARY_STATUS_SUCCESS)
