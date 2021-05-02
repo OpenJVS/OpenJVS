@@ -4,6 +4,7 @@
 #include <linux/input.h>
 
 #include "io.h"
+#include "threading.h"
 
 #define WIIMOTE_DEVICE_NAME "nintendo-wii-remote"
 #define WIIMOTE_DEVICE_NAME_IR "nintendo-wii-remote-ir"
@@ -2377,5 +2378,7 @@ int evDevFromString(char *evDevString);
 int getInputs(DeviceList *deviceList);
 ControllerInput controllerInputFromString(char *controllerInputString);
 ControllerPlayer controllerPlayerFromString(char *controllerPlayerString);
+
+void ThreadManagerStopAll(void);
 
 #endif // INPUT_H_

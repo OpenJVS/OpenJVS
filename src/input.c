@@ -23,32 +23,29 @@
 
 #include "debug.h"
 #include "config.h"
+#include "threading.h"
 
 #define DEV_INPUT_EVENT "/dev/input"
 #define test_bit(bit, array) (array[bit / 8] & (1 << (bit % 8)))
 
-pthread_t threadID[256];
-int threadCount = 0;
-int threadsRunning = 1;
-
-struct MappingThreadArguments
+typedef struct
 {
+    ThreadSharedData *sharedData_p;
     char devicePath[MAX_PATH_LENGTH];
     EVInputs inputs;
     int wiiMode;
     int player;
-};
+} MappingThreadArguments;
 
 void *deviceThread(void *_args)
 {
-    struct MappingThreadArguments *args = (struct MappingThreadArguments *)_args;
+    MappingThreadArguments *args = (MappingThreadArguments *)_args;
     char devicePath[MAX_PATH_LENGTH];
     EVInputs inputs;
     strcpy(devicePath, args->devicePath);
     memcpy(&inputs, &args->inputs, sizeof(EVInputs));
     int wiiMode = args->wiiMode;
     int player = args->player;
-    free(args);
 
     int fd;
     if ((fd = open(devicePath, O_RDONLY)) < 0)
@@ -91,7 +88,7 @@ void *deviceThread(void *_args)
     /* Wii Remote Variables */
     int x0 = 0, x1 = 0, y0 = 0, y1 = 0;
 
-    while (threadsRunning)
+    while (ThreadSharedDataRunninGet())
     {
         bool data_to_read = false;
 
@@ -256,29 +253,20 @@ void *deviceThread(void *_args)
         }
     }
 
+    free(args);
     close(fd);
 
     return 0;
 }
-void startThread(EVInputs *inputs, char *devicePath, int wiiMode, int player)
+static void startThread(EVInputs *inputs, char *devicePath, int wiiMode, int player)
 {
-    struct MappingThreadArguments *args = malloc(sizeof(struct MappingThreadArguments));
+    MappingThreadArguments *args = malloc(sizeof(MappingThreadArguments));
     strcpy(args->devicePath, devicePath);
     memcpy(&args->inputs, inputs, sizeof(EVInputs));
     args->wiiMode = wiiMode;
     args->player = player;
-    pthread_create(&threadID[threadCount], NULL, deviceThread, args);
-    threadCount++;
-}
 
-void stopThreads()
-{
-    printf("Stopping threads\n");
-    threadsRunning = 0;
-    for (int i = 0; i < threadCount; i++)
-    {
-        pthread_join(threadID[i], NULL);
-    }
+    ThreadManagerCreate(deviceThread, args);
 }
 
 int evDevFromString(char *evDevString)

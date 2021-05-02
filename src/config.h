@@ -11,6 +11,8 @@
 #define MAX_PATH_LENGTH 1024
 #define MAX_LINE_LENGTH 1024
 
+/* Interval to poll rotary in seconds */
+#define TIME_POLL_ROTARY 1
 typedef struct
 {
     int senseLineType;
