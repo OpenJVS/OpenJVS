@@ -11,7 +11,9 @@
         "cmath": "c",
         "config.h": "c",
         "debug.h": "c",
-        "pthread.h": "c"
+        "pthread.h": "c",
+        "stdbool.h": "c",
+        "string.h": "c"
     },
     "editor.formatOnPaste": true,
     "editor.formatOnSave": true,

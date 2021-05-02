@@ -23,6 +23,12 @@
 #include "console/debug.h"
 #include "console/config.h"
 
+#define BITS_PER_LONG (sizeof(long) * 8)
+#define NBITS(x) ((((x)-1) / BITS_PER_LONG) + 1)
+#define OFF(x) ((x) % BITS_PER_LONG)
+#define LONG(x) ((x) / BITS_PER_LONG)
+#define test_bit_diff(bit, array) ((array[LONG(bit)] >> OFF(bit)) & 1)
+
 #define DEV_INPUT_EVENT "/dev/input"
 #define test_bit(bit, array) (array[bit / 8] & (1 << (bit % 8)))
 
@@ -437,10 +443,8 @@ int getInputs(DeviceList *deviceList)
 {
     struct dirent **namelist;
 
-    deviceList->length = 0;
-
-    int numberOfDevices = scandir(DEV_INPUT_EVENT, &namelist, isEventDevice, alphasort);
-    if (numberOfDevices < 1)
+    deviceList->length = scandir(DEV_INPUT_EVENT, &namelist, isEventDevice, alphasort);
+    if (deviceList->length < 1)
     {
         debug(0, "Error: No devices found\n");
         return 0;
@@ -449,46 +453,67 @@ int getInputs(DeviceList *deviceList)
     char aimtrakRemap[3][32] = {AIMTRAK_DEVICE_NAME_REMAP_JOYSTICK, AIMTRAK_DEVICE_NAME_REMAP_OUT_SCREEN, AIMTRAK_DEVICE_NAME_REMAP_IN_SCREEN};
     int aimtrakRemapID = 0;
 
-    for (int i = 0; i < numberOfDevices; i++)
+    for (int i = 0; i < deviceList->length; i++)
     {
-        char fname[512];
-        int fd = -1;
-        char name[256] = "???";
+        strcpy(deviceList->devices[i].name, "unknown");
+        strcpy(deviceList->devices[i].fullName, "Unknown");
 
-        snprintf(fname, sizeof(fname), "%s/%s", DEV_INPUT_EVENT, namelist[i]->d_name);
+        snprintf(deviceList->devices[i].path, sizeof(deviceList->devices[i].path), "%s/%s", DEV_INPUT_EVENT, namelist[i]->d_name);
+        free(namelist[i]);
 
-        if ((fd = open(fname, O_RDONLY)) > -1)
+        int device = open(deviceList->devices[i].path, O_RDONLY);
+        if (device < 0)
+            continue;
+
+        ioctl(device, EVIOCGNAME(sizeof(deviceList->devices[i].fullName)), deviceList->devices[i].fullName);
+
+        for (size_t j = 0; j < strlen(deviceList->devices[i].fullName); j++)
         {
-            ioctl(fd, EVIOCGNAME(sizeof(name)), name);
-            close(fd);
-        }
-
-        strcpy(deviceList->devices[deviceList->length].fullName, name);
-
-        for (int i = 0; i < (int)strlen(name); i++)
-        {
-            name[i] = tolower(name[i]);
-            if (name[i] == ' ' || name[i] == '/' || name[i] == '(' || name[i] == ')')
+            deviceList->devices[i].name[j] = tolower(deviceList->devices[i].fullName[j]);
+            if (deviceList->devices[i].name[j] == ' ' || deviceList->devices[i].name[j] == '/' || deviceList->devices[i].name[j] == '(' || deviceList->devices[i].name[j] == ')')
             {
-                name[i] = '-';
+                deviceList->devices[i].name[j] = '-';
             }
         }
 
         /* Check if name starts with ultimarc */
-        if (strcmp(name, AIMTRAK_DEVICE_NAME) == 0)
+        if (strcmp(deviceList->devices[i].name, AIMTRAK_DEVICE_NAME) == 0)
         {
-            strcpy(name, aimtrakRemap[aimtrakRemapID]);
+            strcpy(deviceList->devices[i].name, aimtrakRemap[aimtrakRemapID]);
             aimtrakRemapID++;
 
             if (aimtrakRemapID == 3)
                 aimtrakRemapID = 0;
         }
 
-        strcpy(deviceList->devices[deviceList->length].name, name);
-        strcpy(deviceList->devices[deviceList->length].path, fname);
-        deviceList->length++;
-        free(namelist[i]);
+        deviceList->devices[i].type = DEVICE_TYPE_UNKNOWN;
+        unsigned long bit[EV_MAX][NBITS(KEY_MAX)];
+        memset(bit, 0, sizeof(bit));
+        ioctl(device, EVIOCGBIT(0, EV_MAX), bit[0]);
+
+        if (test_bit_diff(EV_REP, bit[0]) && test_bit_diff(EV_KEY, bit[0]))
+        {
+            deviceList->devices[i].type = DEVICE_TYPE_KEYBOARD;
+        }
+
+        if (test_bit_diff(EV_REL, bit[0]))
+        {
+            deviceList->devices[i].type = DEVICE_TYPE_MOUSE;
+        }
+
+        if (test_bit_diff(EV_KEY, bit[0]))
+        {
+            printf("Found joystick %s\n", deviceList->devices[i].fullName);
+            ioctl(device, EVIOCGBIT(EV_KEY, KEY_MAX), bit[EV_KEY]);
+            if (test_bit_diff(BTN_START, bit[EV_KEY]))
+            {
+                deviceList->devices[i].type = DEVICE_TYPE_JOYSTICK;
+            }
+        }
+
+        close(device);
     }
+
     free(namelist);
 
     return 1;
@@ -552,22 +577,50 @@ static JVSInputStatus initInputsNormalMapped(int *playerNumber, DeviceList *devi
         if (strstr(deviceList->devices[i].name, AIMTRAK_DEVICE_NAME) != NULL)
             continue;
 
+        char disabledPath[MAX_PATH_LENGTH];
+        strcpy(disabledPath, DEFAULT_DEVICE_MAPPING_PATH);
+        strcat(disabledPath, deviceList->devices[i].name);
+        strcat(disabledPath, ".disabled");
+        FILE *file = fopen(disabledPath, "r");
+        if (file != NULL)
+        {
+            fclose(file);
+            continue;
+        }
+
+        /* Attempt to do a generic map */
+        char specialMap[256] = "";
         InputMappings inputMappings = {0};
         if (parseInputMapping(deviceList->devices[i].name, &inputMappings) != JVS_CONFIG_STATUS_SUCCESS || inputMappings.length == 0)
-            continue;
+        {
+            switch (deviceList->devices[i].type)
+            {
+            case DEVICE_TYPE_JOYSTICK:
+                if (parseInputMapping("generic-joystick", &inputMappings) != JVS_CONFIG_STATUS_SUCCESS || inputMappings.length == 0)
+                    continue;
+                strcpy(specialMap, " using Generic Joystick Map");
+                break;
+            case DEVICE_TYPE_KEYBOARD:
+                if (parseInputMapping("generic-keyboard", &inputMappings) != JVS_CONFIG_STATUS_SUCCESS || inputMappings.length == 0)
+                    continue;
+                strcpy(specialMap, " using Generic Keyboard Map");
+                break;
+            default:
+                continue;
+            }
+        }
 
         EVInputs evInputs = {0};
         if (!processMappings(&inputMappings, outputMappings, &evInputs, (ControllerPlayer)*playerNumber))
         {
-            debug(0, "Failed to process the mapping for %s\n", deviceList->devices[i].name);
+            debug(0, "Error: Failed to process the mapping for %s\n", deviceList->devices[i].name);
             continue;
         }
 
         startThread(&evInputs, deviceList->devices[i].path, 0, *playerNumber, jvsIO);
-        debug(0, "  Player %d:\t\t%s\n", *playerNumber, deviceList->devices[i].fullName);
+        debug(0, "  Player %d:\t\t%s%s\n", *playerNumber, deviceList->devices[i].fullName, specialMap);
         (*playerNumber)++;
     }
-
     return JVS_INPUT_STATUS_SUCCESS;
 }
 

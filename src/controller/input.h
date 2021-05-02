@@ -18,8 +18,17 @@
 #define MAX_DEVICES 255
 #define MAX_EV_ITEMS 1024
 
+typedef enum
+{
+    DEVICE_TYPE_JOYSTICK,
+    DEVICE_TYPE_KEYBOARD,
+    DEVICE_TYPE_MOUSE,
+    DEVICE_TYPE_UNKNOWN
+} DeviceType;
+
 typedef struct
 {
+    DeviceType type;
     char name[MAX_PATH];
     char path[MAX_PATH];
     char fullName[MAX_PATH];
