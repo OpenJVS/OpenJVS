@@ -1,0 +1,1 @@
+ACTION=="add", DRIVERS=="usbhid", ENV{ID_BUS}=="usb", RUN+="/bin/systemctl restart openjvs"
