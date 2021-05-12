@@ -91,7 +91,7 @@ int main(int argc, char **argv)
         io.deviceID = 1;
 
         debug(1, "Init inputs");
-        JVSInputStatus inputStatus = initInputs(config.defaultGamePath, config.capabilitiesPath, &io);
+        JVSInputStatus inputStatus = initInputs(config.defaultGamePath, config.capabilitiesPath, &io, config.autoControllerDetection);
         if (inputStatus != JVS_INPUT_STATUS_SUCCESS)
         {
             debug(0, "Critical: Could not initialise any inputs, check they're plugged in and you are root!\n");

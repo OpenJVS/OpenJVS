@@ -2387,7 +2387,7 @@ typedef enum
     JVS_INPUT_STATUS_SUCCESS
 } JVSInputStatus;
 
-JVSInputStatus initInputs(char *outputMappingPath, char *configPath, JVSIO *jvsIO);
+JVSInputStatus initInputs(char *outputMappingPath, char *configPath, JVSIO *jvsIO, int autoDetect);
 int evDevFromString(char *evDevString);
 int getInputs(DeviceList *deviceList);
 ControllerInput controllerInputFromString(char *controllerInputString);

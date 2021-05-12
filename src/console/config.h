@@ -15,6 +15,7 @@
 #define DEFAULT_ROTARY_PATH "/etc/openjvs/rotary"
 #define DEFAULT_SENSE_LINE_PIN 12
 #define DEFAULT_SENSE_LINE_TYPE 0
+#define DEFAULT_AUTO_CONTROLLER_DETECTION 1
 
 #define MAX_PATH_LENGTH 1024
 #define MAX_LINE_LENGTH 1024
@@ -27,6 +28,7 @@ typedef struct
     char devicePath[MAX_PATH_LENGTH];
     int debugLevel;
     char capabilitiesPath[MAX_PATH_LENGTH];
+    int autoControllerDetection;
 } JVSConfig;
 
 typedef enum

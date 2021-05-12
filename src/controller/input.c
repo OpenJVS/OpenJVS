@@ -552,7 +552,7 @@ static JVSInputStatus initInputsWiimote(int *playerNumber, DeviceList *deviceLis
     return JVS_INPUT_STATUS_SUCCESS;
 }
 
-static JVSInputStatus initInputsNormalMapped(int *playerNumber, DeviceList *deviceList, OutputMappings *outputMappings, JVSIO *jvsIO)
+static JVSInputStatus initInputsNormalMapped(int *playerNumber, DeviceList *deviceList, OutputMappings *outputMappings, JVSIO *jvsIO, int autoDetect)
 {
     for (int i = 0; i < deviceList->length; i++)
     {
@@ -578,20 +578,23 @@ static JVSInputStatus initInputsNormalMapped(int *playerNumber, DeviceList *devi
         InputMappings inputMappings = {0};
         if (parseInputMapping(deviceList->devices[i].name, &inputMappings) != JVS_CONFIG_STATUS_SUCCESS || inputMappings.length == 0)
         {
-            switch (deviceList->devices[i].type)
+            if (autoDetect)
             {
-            case DEVICE_TYPE_JOYSTICK:
-                if (parseInputMapping("generic-joystick", &inputMappings) != JVS_CONFIG_STATUS_SUCCESS || inputMappings.length == 0)
+                switch (deviceList->devices[i].type)
+                {
+                case DEVICE_TYPE_JOYSTICK:
+                    if (parseInputMapping("generic-joystick", &inputMappings) != JVS_CONFIG_STATUS_SUCCESS || inputMappings.length == 0)
+                        continue;
+                    strcpy(specialMap, " (Generic Joystick Map)");
+                    break;
+                case DEVICE_TYPE_KEYBOARD:
+                    if (parseInputMapping("generic-keyboard", &inputMappings) != JVS_CONFIG_STATUS_SUCCESS || inputMappings.length == 0)
+                        continue;
+                    strcpy(specialMap, " (Generic Keyboard Map)");
+                    break;
+                default:
                     continue;
-                strcpy(specialMap, " (Generic Joystick Map)");
-                break;
-            case DEVICE_TYPE_KEYBOARD:
-                if (parseInputMapping("generic-keyboard", &inputMappings) != JVS_CONFIG_STATUS_SUCCESS || inputMappings.length == 0)
-                    continue;
-                strcpy(specialMap, " (Generic Keyboard Map)");
-                break;
-            default:
-                continue;
+                }
             }
         }
 
@@ -671,7 +674,7 @@ static JVSInputStatus initInputsAimtrak(int *playerNumber, DeviceList *deviceLis
     return JVS_INPUT_STATUS_SUCCESS;
 }
 
-JVSInputStatus initInputs(char *outputMappingPath, char *configPath, JVSIO *jvsIO)
+JVSInputStatus initInputs(char *outputMappingPath, char *configPath, JVSIO *jvsIO, int autoDetect)
 {
     DeviceList deviceList = {0};
     OutputMappings outputMappings = {0};
@@ -690,7 +693,7 @@ JVSInputStatus initInputs(char *outputMappingPath, char *configPath, JVSIO *jvsI
 
     int playerNumber = 1;
 
-    initInputsNormalMapped(&playerNumber, &deviceList, &outputMappings, jvsIO);
+    initInputsNormalMapped(&playerNumber, &deviceList, &outputMappings, jvsIO, autoDetect);
     initInputsWiimote(&playerNumber, &deviceList, &outputMappings, jvsIO);
     initInputsAimtrak(&playerNumber, &deviceList, &outputMappings, jvsIO);
 
