@@ -259,6 +259,30 @@ void *deviceThread(void *_args)
                     continue;
                 }
 
+                // Useful for mapping analogue buttons to digital buttons,
+                // for example the triggers on a gamepad.
+                if (args->inputs.abs[event.code].type == SWITCH)
+                {
+                    // Allows mapping an axis button to a coin
+                    if (args->inputs.key[event.code].output == COIN)
+                    {
+                        if (event.value == args->inputs.absMax[event.code])
+                        {
+                            incrementCoin(args->jvsIO, args->inputs.key[event.code].jvsPlayer);
+                        }
+                        continue;
+                    }
+                    else if (event.value == args->inputs.absMin[event.code])
+                    {
+                        setSwitch(args->jvsIO, args->inputs.key[event.code].jvsPlayer, args->inputs.key[event.code].output, 0);
+                    }
+                    else
+                    {
+                        setSwitch(args->jvsIO, args->inputs.key[event.code].jvsPlayer, args->inputs.key[event.code].output, 1);
+                    }
+                    continue;
+                }
+
                 /* Handle normally mapped analogue controls */
                 if (args->inputs.absEnabled[event.code])
                 {
@@ -401,14 +425,14 @@ int processMappings(InputMappings *inputMappings, OutputMappings *outputMappings
             evInputs->absEnabled[inputMappings->mappings[i].code] = 1;
         }
 
-        if (inputMappings->mappings[i].type == ANALOGUE)
+        if (inputMappings->mappings[i].type == ANALOGUE && tempMapping.type == ANALOGUE)
         {
             evInputs->abs[inputMappings->mappings[i].code] = tempMapping;
             evInputs->abs[inputMappings->mappings[i].code].type = ANALOGUE;
             evInputs->absEnabled[inputMappings->mappings[i].code] = 1;
             evInputs->absMultiplier[inputMappings->mappings[i].code] = multiplier;
         }
-        else if (inputMappings->mappings[i].type == SWITCH)
+        else if (inputMappings->mappings[i].type == SWITCH || tempMapping.type == SWITCH)
         {
             evInputs->key[inputMappings->mappings[i].code] = tempMapping;
             evInputs->abs[inputMappings->mappings[i].code].type = SWITCH;

@@ -208,6 +208,19 @@ JVSConfigStatus parseOutputMapping(char *path, OutputMappings *outputMappings, c
             continue;
 
         char *command = getNextToken(buffer, " ", &saveptr);
+        int analogueToDigital;
+        if (strcmp(command, "DIGITAL") == 0)
+        {
+            analogueToDigital = 1;
+            // DIGITAL is the first token for these, coming before the
+            // axis name; if we found DIGITAL, we need to read the next
+            // token for the actual axis.
+            command = getNextToken(NULL, " ", &saveptr);
+        }
+        else
+        {
+            analogueToDigital = 0;
+        }
 
         if (strcmp(command, "INCLUDE") == 0)
         {
@@ -220,7 +233,7 @@ JVSConfigStatus parseOutputMapping(char *path, OutputMappings *outputMappings, c
         {
             strcpy(configPath, getNextToken(NULL, " ", &saveptr));
         }
-        else if (command[11] == 'B')
+        else if (command[11] == 'B' || analogueToDigital)
         {
             ControllerPlayer controllerPlayer = controllerPlayerFromString(getNextToken(NULL, " ", &saveptr));
             OutputMapping mapping = {
