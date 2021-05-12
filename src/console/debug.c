@@ -22,6 +22,7 @@ void debug(int level, const char *format, ...)
     va_list args;
     va_start(args, format);
     vprintf(format, args);
+    fflush(stdout);
     va_end(args);
 }
 
@@ -33,6 +34,7 @@ void debugBuffer(int level, unsigned char *buffer, int length)
     for (int i = 0; i < length; i++)
         printf("0x%02hhX ", buffer[i]);
     printf("\n");
+    fflush(stdout);
 }
 
 void debugPacket(int level, JVSPacket *packet)
@@ -48,4 +50,5 @@ void debugPacket(int level, JVSPacket *packet)
         printf("0x%02hhX ", packet->data[i]);
     }
     printf("\n");
+    fflush(stdout);
 }
