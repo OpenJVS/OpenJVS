@@ -1,5 +1,5 @@
-#include "device.h"
-#include "debug.h"
+#include "hardware/device.h"
+#include "console/debug.h"
 
 #define TIMEOUT_SELECT 200
 
@@ -15,10 +15,7 @@ int writeGPIO(int pin, int value);
 int initDevice(char *devicePath, int senseLineType, int senseLinePin)
 {
   if ((serialIO = open(devicePath, O_RDWR | O_NOCTTY | O_SYNC | O_NDELAY)) < 0)
-  {
-    debug(0, "Error: Failed to open %s with:%d \n", devicePath, serialIO);
     return 0;
-  }
 
   /* Setup the serial connection */
   setSerialAttributes(serialIO, B115200);
@@ -34,19 +31,19 @@ int initDevice(char *devicePath, int senseLineType, int senseLinePin)
   /* Setup the GPIO pins initial state */
   switch (senseLineType)
   {
-  case 0: // No sense line set
-    debug(1, "No sense line set");
+  case 0:
+    debug(1, "Debug: No sense line set");
     break;
   case 1:
-    debug(1, "Float/Sync sense line set");
+    debug(1, "Debug: Float/Sync sense line set");
     setGPIODirection(senseLinePin, IN);
     break;
   case 2:
-    debug(1, "Complex sense line set");
+    debug(1, "Debug: Complex sense line set");
     setGPIODirection(senseLinePin, OUT);
     break;
   default:
-    debug(0, "Invalid sense line type set\n");
+    debug(0, "Debug: Invalid sense line type set\n");
     break;
   }
 

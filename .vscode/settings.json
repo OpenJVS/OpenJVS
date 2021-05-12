@@ -8,7 +8,13 @@
         "string_view": "c",
         "typeinfo": "c",
         "array": "c",
-        "cmath": "c"
+        "cmath": "c",
+        "config.h": "c",
+        "debug.h": "c",
+        "pthread.h": "c",
+        "stdbool.h": "c",
+        "string.h": "c",
+        "rotary.h": "c"
     },
     "editor.formatOnPaste": true,
     "editor.formatOnSave": true,

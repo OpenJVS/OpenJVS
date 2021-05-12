@@ -3,6 +3,7 @@
 
 typedef enum
 {
+    JVS_ROTARY_STATUS_UNUSED,
     JVS_ROTARY_STATUS_ERROR,
     JVS_ROTARY_STATUS_SUCCESS
 } JVSRotaryStatus;

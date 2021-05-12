@@ -1,15 +1,12 @@
 # OpenJVS Config
-# 
-# This configuration file should generally not be touched
-# unless you know what you are doing.
-#
 # Author: Bobby Dilley
 
 # Setup the default game to emulate
+# Use ROTARY for the rotary controller on the HAT
 DEFAULT_GAME generic-driving
 
 # Setup which IO to emulate by default
-EMULATE SEGA_TYPE_3_IO
+EMULATE sega-type-3
 
 # Setup the sense line
 # SENSE_LINE_TYPE 0 - USB to RS485 with no sense line
@@ -25,4 +22,9 @@ DEBUG_MODE 0
 
 # Setup the device path
 DEVICE_PATH /dev/ttyUSB0
+
+# Automatic Controller Detection
+# If set to 0 OpenJVS will ignore all controllers
+# that haven't already been mapped.
+AUTO_CONTROLLER_DETECTION 1
 

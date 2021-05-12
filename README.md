@@ -2,11 +2,11 @@
 
 OpenJVS is an emulator for JVS Arcade IO boards which are used in many arcade systems to this day.
 
-Questions can be asked in the discord channel: https://discord.gg/aJAR9N2. If it asks you to create an account, you can simply click anywhere away from the box (the dark area) and it'll let you in!
+Questions can be asked in the discord channel: https://arcade.community. If it asks you to create an account, you can simply click anywhere away from the box (the dark area) and it'll let you in!
 
 ## Requirements
 
-OpenJVS requires a USB RS485 dongle to communicate, and supports the following hardware:
+OpenJVS requires a USB RS485 dongle to communicate, or an OpenJVS Hat and supports the following hardware:
 
 | Platform                        | Status      | Sense Line Required |
 |---------------------------------|-------------|---------------------|
@@ -38,11 +38,8 @@ On games that require a sense line, the following has to be wired up:
 
 A 1KOhm resistor or 4 signal diodes are known to work properly, the purpose of these is to create a 2.5 volt drop.
 
-A list of RS485 dongles and comments are below:
+When buying a USB to RS485 dongle be sure to buy one with an FTDI chip inside. The CP2102 and other chips have been found to not work well. 
 
-- FTDI - STRONGLY RECCOMEND!
-- CP2102 - Worked for me, but a lot of people are having issues. I would generally reccomend not getting one, as I beleive a lot are fake.
-- Other - Don't get them (unless you want to try it yourself).
 
 ## Installation and Running
 
@@ -61,12 +58,21 @@ To run locally (from inside the root directory):
 sudo ./build/openjvs [optional outside mapping name]
 ```
 
-To install for globally and run (from inside the root directory):
+To install globally and run (from inside the root directory):
 
 ```
 make install
 sudo openjvs [optional outside mapping name]
 ```
+
+To make OpenJVS run at startup you can use:
+
+```
+sudo systemctl enable openjvs
+sudo systemctl start openjvs
+```
+
+> Note: You must then stop OpenJVS running with `sudo systemctl stop openjvs` if you want to then run it locally for testing.
 
 All input devices are enabled by default and must be disabled explicitly, to see what devices are available type:
 
@@ -83,6 +89,10 @@ sudo openjvs --enable sony-playstation-r-3-controller
 # To disable
 sudo openjvs --disable sony-playstation-r-3-controller
 ```
+
+Devices are automatically used if there is no map for them. OpenJVS will attempt to detect if the device is a keyboard or joystick and map it according to the default mapping file for those device types.
+
+If you'd like to stop the automatic detection, you can do this in the config file. If you'd like to stop an individual device being detected, you can create a blank mapping file for it in /etc/openjvs/devices.
 
 Each new device is seen as a new player. For example if you plug 2 playstation controllers in, they will be mapped to PLAYER 1 and PLAYER 2. This means you should disable controllers you don't want to use, as they will take up player space.
 
@@ -270,7 +280,7 @@ Other mapping files can be included, so for example if a game is almost exactly 
 # Author: Bobby Dilley
 
 # Set the IO to emulate
-EMULATE SEGA_TYPE_3
+EMULATE sega-type-3
 
 # Include the generic driving file
 INCLUDE generic-driving
@@ -281,13 +291,4 @@ CONTROLLER_BUTTON_LEFT_BUMPER CONTROLLER_1 BUTTON_DOWN PLAYER_2
 
 ```
 
-As well as this the IO that should be emulated can be specified in the map file with the `EMULATE` keyword, these IOs are created in `input.h` and are from the following list.
-
-```
-IO TO EMULATE
--------------
-SEGA_TYPE_3_IO
-NAMCO_JYU_IO
-NAMCO_V185_IO
-```
-
+As well as this the IO that should be emulated can be specified in the map file with the `EMULATE` keyword, these IOs are defined in the `/etc/openjvs/ios` directory.

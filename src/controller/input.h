@@ -3,7 +3,7 @@
 
 #include <linux/input.h>
 
-#include "io.h"
+#include "jvs/io.h"
 
 #define WIIMOTE_DEVICE_NAME "nintendo-wii-remote"
 #define WIIMOTE_DEVICE_NAME_IR "nintendo-wii-remote-ir"
@@ -18,8 +18,17 @@
 #define MAX_DEVICES 255
 #define MAX_EV_ITEMS 1024
 
+typedef enum
+{
+    DEVICE_TYPE_JOYSTICK,
+    DEVICE_TYPE_KEYBOARD,
+    DEVICE_TYPE_MOUSE,
+    DEVICE_TYPE_UNKNOWN
+} DeviceType;
+
 typedef struct
 {
+    DeviceType type;
     char name[MAX_PATH];
     char path[MAX_PATH];
     char fullName[MAX_PATH];
@@ -2372,7 +2381,13 @@ typedef struct
     OutputMapping key[MAX_EV_ITEMS];
 } EVInputs;
 
-int initInputs(char *outputMappingPath);
+typedef enum
+{
+    JVS_INPUT_STATUS_ERROR,
+    JVS_INPUT_STATUS_SUCCESS
+} JVSInputStatus;
+
+JVSInputStatus initInputs(char *outputMappingPath, char *configPath, JVSIO *jvsIO, int autoDetect);
 int evDevFromString(char *evDevString);
 int getInputs(DeviceList *deviceList);
 ControllerInput controllerInputFromString(char *controllerInputString);

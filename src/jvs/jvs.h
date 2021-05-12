@@ -12,7 +12,8 @@
 #include <stdarg.h>
 #include <sys/ioctl.h>
 
-#include "io.h"
+#include "jvs/io.h"
+#include "console/config.h"
 
 #define JVS_RETRY_COUNT 3
 #define JVS_MAX_PACKET_SIZE 255
@@ -108,10 +109,11 @@ typedef enum
     JVS_STATUS_ERROR_UNSUPPORTED_COMMAND,
 } JVSStatus;
 
-int initJVS(char *devicePath, const JVSCapabilities *capabilitiesSetup);
+int initJVS(JVSIO *jvsIO);
+
 int disconnectJVS();
 
-JVSStatus processPacket();
+JVSStatus processPacket(JVSIO *jvsIO);
 
 JVSStatus readPacket(JVSPacket *packet);
 JVSStatus writePacket(JVSPacket *packet);

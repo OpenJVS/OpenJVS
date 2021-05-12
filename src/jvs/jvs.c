@@ -1,26 +1,14 @@
-#include "jvs.h"
-#include "device.h"
-#include "config.h"
-#include "debug.h"
+#include "jvs/jvs.h"
+#include "hardware/device.h"
+#include "console/debug.h"
 
 #include <time.h>
-
-/* The deviceID is set to 1 to allow the system to work after a reboot of OpenJVS */
-int deviceID = 1;
-
-/* Pointer for the capabilities and state of the IO */
-JVSCapabilities *localCapabilities;
-JVSState *localState;
-JVSConfig *localConfig;
 
 /* The in and out packets used to read and write to and from*/
 JVSPacket inputPacket, outputPacket;
 
 /* The in and out buffer used to read and write to and from */
 unsigned char outputBuffer[JVS_MAX_PACKET_SIZE], inputBuffer[JVS_MAX_PACKET_SIZE];
-
-/* Variables to store bit alignment */
-int analogueRestBits, gunXRestBits, gunYRestBits;
 
 /**
  * Initialise the JVS emulation
@@ -32,26 +20,14 @@ int analogueRestBits, gunXRestBits, gunYRestBits;
  * @param capabilitiesSetup The representation of the IO to emulate
  * @returns 1 if the device was initialised successfully, 0 otherwise.
  */
-int initJVS(char *devicePath, const JVSCapabilities *capabilitiesSetup)
+int initJVS(JVSIO *jvsIO)
 {
-	/* Save pointers to capabilities, state of the IO and config */
-	localCapabilities = getCapabilities();
-	localState = getState();
-	localConfig = getConfig();
-
-	/* Init the connection to the Naomi */
-	if (!initDevice(devicePath, localConfig->senseLineType, localConfig->senseLinePin))
-		return 0;
-
-	/* Init the Virtual IO */
-	if (!initIO((JVSCapabilities *)capabilitiesSetup))
-		return 0;
-
 	/* Calculate the alignments for analogue and gun channels, default is left */
-	if(!localCapabilities->rightAlignBits) {
-        analogueRestBits = 16 - localCapabilities->analogueInBits;
-        gunXRestBits = 16 - localCapabilities->gunXBits;
-        gunYRestBits = 16 - localCapabilities->gunYBits;
+	if (!jvsIO->capabilities.rightAlignBits)
+	{
+		jvsIO->analogueRestBits = 16 - jvsIO->capabilities.analogueInBits;
+		jvsIO->gunXRestBits = 16 - jvsIO->capabilities.gunXBits;
+		jvsIO->gunYRestBits = 16 - jvsIO->capabilities.gunYBits;
 	}
 
 	/* Float the sense line ready for connection */
@@ -165,7 +141,7 @@ void writeFeatures(JVSPacket *outputPacket, JVSCapabilities *capabilities)
  *
  * @returns The status of the entire operation
  */
-JVSStatus processPacket()
+JVSStatus processPacket(JVSIO *jvsIO)
 {
 	/* Initially read in a packet */
 	JVSStatus readPacketStatus = readPacket(&inputPacket);
@@ -173,7 +149,7 @@ JVSStatus processPacket()
 		return readPacketStatus;
 
 	/* Check if the packet is for us */
-	if (inputPacket.destination != BROADCAST && inputPacket.destination != deviceID)
+	if (inputPacket.destination != BROADCAST && inputPacket.destination != jvsIO->deviceID)
 		return JVS_STATUS_NOT_FOR_US;
 
 	/* Handle re-transmission requests */
@@ -200,7 +176,12 @@ JVSStatus processPacket()
 		{
 			debug(1, "CMD_RESET\n");
 			size = 2;
-			deviceID = -1;
+			jvsIO->deviceID = -1;
+			while (jvsIO->chainedIO != NULL)
+			{
+				jvsIO->deviceID = -1;
+				jvsIO = jvsIO->chainedIO;
+			}
 			setSenseLine(0);
 		}
 		break;
@@ -210,7 +191,7 @@ JVSStatus processPacket()
 		{
 			debug(1, "CMD_ASSIGN_ADDR\n");
 			size = 2;
-			deviceID = inputPacket.data[index + 1];
+			jvsIO->deviceID = inputPacket.data[index + 1];
 			outputPacket.data[outputPacket.length++] = REPORT_SUCCESS;
 			setSenseLine(1);
 		}
@@ -221,8 +202,8 @@ JVSStatus processPacket()
 		{
 			debug(1, "CMD_REQUEST_ID\n");
 			outputPacket.data[outputPacket.length] = REPORT_SUCCESS;
-			memcpy(&outputPacket.data[outputPacket.length + 1], localCapabilities->name, strlen(localCapabilities->name) + 1);
-			outputPacket.length += strlen(localCapabilities->name) + 2;
+			memcpy(&outputPacket.data[outputPacket.length + 1], jvsIO->capabilities.name, strlen(jvsIO->capabilities.name) + 1);
+			outputPacket.length += strlen(jvsIO->capabilities.name) + 2;
 		}
 		break;
 
@@ -231,7 +212,7 @@ JVSStatus processPacket()
 		{
 			debug(1, "CMD_COMMAND_VERSION\n");
 			outputPacket.data[outputPacket.length] = REPORT_SUCCESS;
-			outputPacket.data[outputPacket.length + 1] = localCapabilities->commandVersion;
+			outputPacket.data[outputPacket.length + 1] = jvsIO->capabilities.commandVersion;
 			outputPacket.length += 2;
 		}
 		break;
@@ -241,7 +222,7 @@ JVSStatus processPacket()
 		{
 			debug(1, "CMD_JVS_VERSION\n");
 			outputPacket.data[outputPacket.length] = REPORT_SUCCESS;
-			outputPacket.data[outputPacket.length + 1] = localCapabilities->jvsVersion;
+			outputPacket.data[outputPacket.length + 1] = jvsIO->capabilities.jvsVersion;
 			outputPacket.length += 2;
 		}
 		break;
@@ -251,7 +232,7 @@ JVSStatus processPacket()
 		{
 			debug(1, "CMD_COMMS_VERSION\n");
 			outputPacket.data[outputPacket.length] = REPORT_SUCCESS;
-			outputPacket.data[outputPacket.length + 1] = localCapabilities->commsVersion;
+			outputPacket.data[outputPacket.length + 1] = jvsIO->capabilities.commsVersion;
 			outputPacket.length += 2;
 		}
 		break;
@@ -260,7 +241,7 @@ JVSStatus processPacket()
 		case CMD_CAPABILITIES:
 		{
 			debug(1, "CMD_CAPABILITIES\n");
-			writeFeatures(&outputPacket, localCapabilities);
+			writeFeatures(&outputPacket, &jvsIO->capabilities);
 		}
 		break;
 
@@ -270,13 +251,13 @@ JVSStatus processPacket()
 			debug(1, "CMD_READ_SWITCHES\n");
 			size = 3;
 			outputPacket.data[outputPacket.length] = REPORT_SUCCESS;
-			outputPacket.data[outputPacket.length + 1] = localState->inputSwitch[0];
+			outputPacket.data[outputPacket.length + 1] = jvsIO->state.inputSwitch[0];
 			outputPacket.length += 2;
 			for (int i = 0; i < inputPacket.data[index + 1]; i++)
 			{
 				for (int j = 0; j < inputPacket.data[index + 2]; j++)
 				{
-					outputPacket.data[outputPacket.length++] = localState->inputSwitch[i + 1] >> (8 - (j * 8));
+					outputPacket.data[outputPacket.length++] = jvsIO->state.inputSwitch[i + 1] >> (8 - (j * 8));
 				}
 			}
 		}
@@ -291,8 +272,8 @@ JVSStatus processPacket()
 
 			for (int i = 0; i < numberCoinSlots; i++)
 			{
-				outputPacket.data[outputPacket.length] = (localState->coinCount[i] << 8) & 0x1F;
-				outputPacket.data[outputPacket.length + 1] = localState->coinCount[i] & 0xFF;
+				outputPacket.data[outputPacket.length] = (jvsIO->state.coinCount[i] << 8) & 0x1F;
+				outputPacket.data[outputPacket.length + 1] = jvsIO->state.coinCount[i] & 0xFF;
 				outputPacket.length += 2;
 			}
 		}
@@ -308,7 +289,7 @@ JVSStatus processPacket()
 			for (int i = 0; i < inputPacket.data[index + 1]; i++)
 			{
 				/* By default left align the data */
-				int analogueData = localState->analogueChannel[i] << analogueRestBits;
+				int analogueData = jvsIO->state.analogueChannel[i] << jvsIO->analogueRestBits;
 				outputPacket.data[outputPacket.length] = analogueData >> 8;
 				outputPacket.data[outputPacket.length + 1] = analogueData;
 				outputPacket.length += 2;
@@ -325,8 +306,8 @@ JVSStatus processPacket()
 
 			for (int i = 0; i < inputPacket.data[index + 1]; i++)
 			{
-				outputPacket.data[outputPacket.length] = localState->rotaryChannel[i] >> 8;
-				outputPacket.data[outputPacket.length + 1] = localState->rotaryChannel[i];
+				outputPacket.data[outputPacket.length] = jvsIO->state.rotaryChannel[i] >> 8;
+				outputPacket.data[outputPacket.length + 1] = jvsIO->state.rotaryChannel[i];
 				outputPacket.length += 2;
 			}
 		}
@@ -440,11 +421,11 @@ JVSStatus processPacket()
 			outputPacket.data[outputPacket.length++] = REPORT_SUCCESS;
 
 			/* Prevent underflow of coins */
-			if (coin_decrement > localState->coinCount[0])
-				coin_decrement = localState->coinCount[0];
+			if (coin_decrement > jvsIO->state.coinCount[0])
+				coin_decrement = jvsIO->state.coinCount[0];
 
-			for (int i = 0; i < localCapabilities->coins; i++)
-				localState->coinCount[i] -= coin_decrement;
+			for (int i = 0; i < jvsIO->capabilities.coins; i++)
+				jvsIO->state.coinCount[i] -= coin_decrement;
 		}
 		break;
 
@@ -471,8 +452,8 @@ JVSStatus processPacket()
 			debug(1, "CMD_READ_LIGHTGUN\n");
 			size = 2;
 
-			int analogueXData = localState->gunChannel[0] << gunXRestBits;
-			int analogueYData = localState->gunChannel[1] << gunYRestBits;
+			int analogueXData = jvsIO->state.gunChannel[0] << jvsIO->gunXRestBits;
+			int analogueYData = jvsIO->state.gunChannel[1] << jvsIO->gunYRestBits;
 			outputPacket.data[outputPacket.length] = REPORT_SUCCESS;
 			outputPacket.data[outputPacket.length + 1] = analogueXData >> 8;
 			outputPacket.data[outputPacket.length + 2] = analogueXData;
