@@ -18,7 +18,7 @@ typedef struct
     pthread_t threadID[THREAD_MAX_NUMBER];
     int threadCount;
     /* Data to be shared between threads */
-    pthread_mutex_t mutex_threads;
+    pthread_rwlock_t rwlock_threads;
     int ThreadsRunning;
 } ThreadSharedData;
 

@@ -700,26 +700,50 @@ static JVSInputStatus initInputsAimtrak(int *playerNumber, DeviceList *deviceLis
 
 JVSInputStatus initInputs(char *outputMappingPath, char *configPath, JVSIO *jvsIO, int autoDetect)
 {
-    DeviceList deviceList = {0};
+    JVSInputStatus retval = JVS_INPUT_STATUS_SUCCESS;
+    DeviceList *deviceList = NULL;
     OutputMappings outputMappings = {0};
 
-    if (!getInputs(&deviceList))
+    deviceList = malloc(sizeof(DeviceList));
+
+    if (deviceList == NULL)
     {
-        debug(0, "Error: Failed to open devices\n");
-        return JVS_INPUT_STATUS_ERROR;
+        debug(0, "Error: Failed to malloc\n");
+        retval = JVS_INPUT_STATUS_ERROR;
     }
 
-    if (parseOutputMapping(outputMappingPath, &outputMappings, configPath) != JVS_CONFIG_STATUS_SUCCESS)
+    if (retval == JVS_INPUT_STATUS_SUCCESS)
     {
-        debug(0, "Error: Cannot find an output mapping\n");
-        return JVS_INPUT_STATUS_ERROR;
+        if (!getInputs(deviceList))
+        {
+            debug(0, "Error: Failed to open devices\n");
+            retval = JVS_INPUT_STATUS_ERROR;
+        }
     }
 
-    int playerNumber = 1;
+    if (retval == JVS_INPUT_STATUS_SUCCESS)
+    {
+        if (parseOutputMapping(outputMappingPath, &outputMappings, configPath) != JVS_CONFIG_STATUS_SUCCESS)
+        {
+            debug(0, "Error: Cannot find an output mapping\n");
+            retval = JVS_INPUT_STATUS_ERROR;
+        }
+    }
 
-    initInputsNormalMapped(&playerNumber, &deviceList, &outputMappings, jvsIO, autoDetect);
-    initInputsWiimote(&playerNumber, &deviceList, &outputMappings, jvsIO);
-    initInputsAimtrak(&playerNumber, &deviceList, &outputMappings, jvsIO);
+    if (retval == JVS_INPUT_STATUS_SUCCESS)
+    {
+        int playerNumber = 1;
 
-    return JVS_INPUT_STATUS_SUCCESS;
+        initInputsNormalMapped(&playerNumber, deviceList, &outputMappings, jvsIO, autoDetect);
+        initInputsWiimote(&playerNumber, deviceList, &outputMappings, jvsIO);
+        initInputsAimtrak(&playerNumber, deviceList, &outputMappings, jvsIO);
+    }
+
+    if (deviceList != NULL)
+    {
+        free(deviceList);
+        deviceList = NULL;
+    }
+
+    return retval;
 }

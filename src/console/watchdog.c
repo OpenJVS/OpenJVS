@@ -1,16 +1,17 @@
 #include "console/watchdog.h"
+#include "console/debug.h"
+#include "controller/threading.h"
 
 #include <pthread.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
+#include <unistd.h>
 
 #include "controller/input.h"
 
 // Poll rotary every one second
 #define TIME_POLL_ROTARY 1
-
-pthread_t watchdogThreadID;
 
 typedef struct
 {
@@ -21,42 +22,61 @@ typedef struct
 
 void *watchdogThread(void *_args)
 {
+    int error = 0;
     WatchdogThreadArguments *args = (WatchdogThreadArguments *)_args;
 
-    DeviceList deviceList;
-    int originalDevicesCount = 0;
-    if (getInputs(&deviceList))
+    DeviceList *deviceList = NULL;
+    deviceList = malloc(sizeof(DeviceList));
+
+    if (deviceList == NULL)
     {
-        originalDevicesCount = deviceList.length;
+        debug(0, "Error: Failed to malloc\n");
+        error = -1;
     }
 
-    int rotaryValue = -1;
-    time_t rotaryTime = time(NULL);
-
-    if (args->rotaryStatus == JVS_ROTARY_STATUS_SUCCESS)
-        rotaryValue = getRotaryValue();
-
-    while (args->running)
+    if (error == 0)
     {
-        time_t now = time(NULL);
-        if ((now - rotaryTime) > TIME_POLL_ROTARY)
+        int originalDevicesCount = 0;
+        if (getInputs(deviceList))
         {
-            if (args->rotaryStatus == JVS_ROTARY_STATUS_SUCCESS && rotaryValue != getRotaryValue())
+            originalDevicesCount = deviceList->length;
+        }
+
+        int rotaryValue = -1;
+
+        if (args->rotaryStatus == JVS_ROTARY_STATUS_SUCCESS)
+        {
+            rotaryValue = getRotaryValue();
+        }
+
+        while (getThreadsRunning())
+        {
+            if ((args->rotaryStatus == JVS_ROTARY_STATUS_SUCCESS) && (rotaryValue != getRotaryValue()))
             {
                 *args->running = 0;
                 break;
             }
 
-            if (getInputs(&deviceList) == 0 || deviceList.length != originalDevicesCount)
+            if ((getInputs(deviceList) == 0) || (deviceList->length != originalDevicesCount))
             {
                 *args->running = 0;
                 break;
             }
-            rotaryTime = now;
+            sleep(TIME_POLL_ROTARY);
         }
     }
 
-    free(_args);
+    if (deviceList != NULL)
+    {
+        free(deviceList);
+        deviceList = NULL;
+    }
+
+    if (_args != NULL)
+    {
+        free(_args);
+        _args = NULL;
+    }
 
     return 0;
 }
@@ -67,7 +87,7 @@ WatchdogStatus initWatchdog(volatile int *running, JVSRotaryStatus rotaryStatus)
     args->running = running;
     args->rotaryStatus = rotaryStatus;
 
-    if (pthread_create(&watchdogThreadID, NULL, watchdogThread, args) != 0)
+    if (THREAD_STATUS_SUCCESS != createThread(watchdogThread, args))
     {
         return WATCHDOG_STATUS_ERROR;
     }

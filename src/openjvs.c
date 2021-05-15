@@ -14,6 +14,9 @@
 #include "jvs/jvs.h"
 #include "ffb/ffb.h"
 
+/* Time between reinit in ms */
+#define TIME_REINIT 200
+
 void handleSignal(int signal);
 
 volatile int running = 1;
@@ -70,7 +73,9 @@ int main(int argc, char **argv)
     JVSRotaryStatus rotaryStatus = JVS_ROTARY_STATUS_UNUSED;
     int rotaryValue = -1;
     if (strcmp(config.defaultGamePath, "rotary") == 0 || strcmp(config.defaultGamePath, "ROTARY") == 0)
+    {
         rotaryStatus = initRotary();
+    }
 
     while (running != -1)
     {
@@ -97,8 +102,10 @@ int main(int argc, char **argv)
             debug(0, "Critical: Could not initialise any inputs, check they're plugged in and you are root!\n");
         }
 
-        if (rotaryValue > -1)
+        if (rotaryStatus == JVS_ROTARY_STATUS_SUCCESS)
+        {
             debug(0, "  Rotary Position:\t%d\n", rotaryValue);
+        }
 
         debug(0, "  Output:\t\t%s\n", config.defaultGamePath);
 
@@ -155,7 +162,12 @@ int main(int argc, char **argv)
                 break;
             }
         }
+
+        /* Stop threads managed by ThreadManager */
         stopAllThreads();
+
+        /* Take a short break on reinit to reduce load */
+        usleep(TIME_REINIT);
     }
 
     /* Close the file pointer */

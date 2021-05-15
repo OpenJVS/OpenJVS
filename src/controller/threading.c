@@ -12,7 +12,7 @@ ThreadStatus initThreadManager()
 {
     memset(&ThreadManagerData, 0, sizeof(ThreadManagerData));
     pthread_mutex_init(&ThreadManagerData.mutex_manager, NULL);
-    pthread_mutex_init(&ThreadManagerData.mutex_threads, NULL);
+    pthread_rwlock_init(&ThreadManagerData.rwlock_threads, NULL);
     return THREAD_STATUS_SUCCESS;
 }
 
@@ -56,15 +56,15 @@ void stopAllThreads()
 int getThreadsRunning()
 {
     int threadsRunning = -1;
-    pthread_mutex_lock(&ThreadManagerData.mutex_threads);
+    pthread_rwlock_rdlock(&ThreadManagerData.rwlock_threads);
     threadsRunning = ThreadManagerData.ThreadsRunning;
-    pthread_mutex_unlock(&ThreadManagerData.mutex_threads);
+    pthread_rwlock_unlock(&ThreadManagerData.rwlock_threads);
     return threadsRunning;
 }
 
 void setThreadsRunning(int running)
 {
-    pthread_mutex_lock(&ThreadManagerData.mutex_threads);
+    pthread_rwlock_wrlock(&ThreadManagerData.rwlock_threads);
     ThreadManagerData.ThreadsRunning = running;
-    pthread_mutex_unlock(&ThreadManagerData.mutex_threads);
+    pthread_rwlock_unlock(&ThreadManagerData.rwlock_threads);
 }
