@@ -176,6 +176,19 @@ JVSConfigStatus parseInputMapping(char *path, InputMappings *inputMappings)
             inputMappings->mappings[inputMappings->length] = mapping;
             inputMappings->length++;
         }
+        else if (command[0] == 'M')
+        {
+            int code = evDevFromString(command);
+            ControllerInput input = controllerInputFromString(getNextToken(NULL, " ", &saveptr));
+
+            InputMapping mapping = {
+                .type = CARD,
+                .code = code,
+                .input = input};
+
+            inputMappings->mappings[inputMappings->length] = mapping;
+            inputMappings->length++;
+        }
         else
         {
             printf("Error: Unknown mapping command %s\n", command);
