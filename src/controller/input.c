@@ -297,6 +297,18 @@ void *deviceThread(void *_args)
                 }
             }
             break;
+
+            case EV_MSC:
+            {
+                if (args->inputs.key[event.code].output == COIN)
+                {
+                    if (event.value == 1)
+                        incrementCoin(args->jvsIO, args->inputs.key[event.code].jvsPlayer);
+
+                    continue;
+                }
+            }
+            break;
             }
         }
     }
@@ -436,6 +448,13 @@ int processMappings(InputMappings *inputMappings, OutputMappings *outputMappings
         {
             evInputs->key[inputMappings->mappings[i].code] = tempMapping;
             evInputs->abs[inputMappings->mappings[i].code].type = SWITCH;
+            evInputs->absEnabled[inputMappings->mappings[i].code] = 1;
+        }
+
+        if (inputMappings->mappings[i].type == CARD)
+        {
+            evInputs->key[inputMappings->mappings[i].code] = tempMapping;
+            evInputs->abs[inputMappings->mappings[i].code].type = COIN;
             evInputs->absEnabled[inputMappings->mappings[i].code] = 1;
         }
     }

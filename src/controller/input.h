@@ -46,6 +46,7 @@ typedef enum
     SWITCH,
     ROTARY,
     HAT,
+    CARD,
 } InputType;
 
 typedef enum
