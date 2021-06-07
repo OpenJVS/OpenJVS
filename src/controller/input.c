@@ -225,7 +225,7 @@ void *deviceThread(void *_args)
                 if (args->inputs.key[event.code].output == COIN)
                 {
                     if (event.value == 1)
-                        incrementCoin(args->jvsIO, args->inputs.key[event.code].jvsPlayer);
+                        incrementCoin(args->jvsIO, args->inputs.key[event.code].jvsPlayer, 1);
 
                     continue;
                 }
@@ -268,7 +268,7 @@ void *deviceThread(void *_args)
                     {
                         if (event.value == args->inputs.absMax[event.code])
                         {
-                            incrementCoin(args->jvsIO, args->inputs.key[event.code].jvsPlayer);
+                            incrementCoin(args->jvsIO, args->inputs.key[event.code].jvsPlayer, 1);
                         }
                         continue;
                     }
@@ -302,8 +302,11 @@ void *deviceThread(void *_args)
             {
                 if (args->inputs.key[event.code].output == COIN)
                 {
-                    if (event.value == 1)
-                        incrementCoin(args->jvsIO, args->inputs.key[event.code].jvsPlayer);
+                    // The event's value is passed through, allowing the
+                    // source of the event to define how many coins to
+                    // insert at once.
+                    if (event.value > 0)
+                        incrementCoin(args->jvsIO, args->inputs.key[event.code].jvsPlayer, event.value);
 
                     continue;
                 }

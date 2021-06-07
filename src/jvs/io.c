@@ -45,12 +45,12 @@ int setSwitch(JVSIO *io, JVSPlayer player, JVSInput switchNumber, int value)
 	return 1;
 }
 
-int incrementCoin(JVSIO *io, JVSPlayer player)
+int incrementCoin(JVSIO *io, JVSPlayer player, int amount)
 {
 	if (player == SYSTEM)
 		return 0;
 
-	io->state.coinCount[player - 1]++;
+	io->state.coinCount[player - 1] = io->state.coinCount[player - 1] + amount;
 	return 1;
 }
 
