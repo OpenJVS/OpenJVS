@@ -420,12 +420,13 @@ JVSStatus processPacket(JVSIO *jvsIO)
 
 			outputPacket.data[outputPacket.length++] = REPORT_SUCCESS;
 
-			/* Prevent underflow of coins */
-			if (coin_decrement > jvsIO->state.coinCount[0])
-				coin_decrement = jvsIO->state.coinCount[0];
-
 			for (int i = 0; i < jvsIO->capabilities.coins; i++)
+			{
+				/* Prevent underflow of coins */
+				if (coin_decrement > jvsIO->state.coinCount[i])
+					coin_decrement = jvsIO->state.coinCount[i];
 				jvsIO->state.coinCount[i] -= coin_decrement;
+			}
 		}
 		break;
 
