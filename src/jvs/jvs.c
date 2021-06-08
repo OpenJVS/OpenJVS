@@ -416,17 +416,15 @@ JVSStatus processPacket(JVSIO *jvsIO)
 		{
 			debug(1, "CMD_DECREASE_COINS\n");
 			size = 4;
+			int slot_index = inputPacket.data[index + 1];
 			int coin_decrement = ((int)(inputPacket.data[index + 2]) | ((int)(inputPacket.data[index + 3]) << 8));
 
 			outputPacket.data[outputPacket.length++] = REPORT_SUCCESS;
 
-			for (int i = 0; i < jvsIO->capabilities.coins; i++)
-			{
-				/* Prevent underflow of coins */
-				if (coin_decrement > jvsIO->state.coinCount[i])
-					coin_decrement = jvsIO->state.coinCount[i];
-				jvsIO->state.coinCount[i] -= coin_decrement;
-			}
+			/* Prevent underflow of coins */
+			if (coin_decrement > jvsIO->state.coinCount[slot_index])
+				coin_decrement = jvsIO->state.coinCount[slot_index];
+			jvsIO->state.coinCount[slot_index] -= coin_decrement;
 		}
 		break;
 
