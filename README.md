@@ -1,3 +1,5 @@
+[![Actions Status](https://github.com/openjvs/openjvs/workflows/Build/badge.svg)](https://github.com/openjvs/openjvs/actions)
+
 # OpenJVS
 
 OpenJVS is an emulator for IO Boards in arcade machines that use the JVS protocol.
