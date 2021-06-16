@@ -399,8 +399,16 @@ JVSStatus processPacket(JVSIO *jvsIO)
 		case CMD_WRITE_COINS:
 		{
 			debug(1, "CMD_WRITE_COINS\n");
-			size = 3;
+			size = 4;
+			int slot_index = inputPacket.data[index + 1];
+			int coin_increment = ((int)(inputPacket.data[index + 2]) | ((int)(inputPacket.data[index + 3]) << 8));
+
 			outputPacket.data[outputPacket.length++] = REPORT_SUCCESS;
+
+			/* Prevent overflow of coins */
+			if (coin_increment + jvsIO->state.coinCount[slot_index] > 16383)
+				coin_increment = 16383 - jvsIO->state.coinCount[slot_index];
+			jvsIO->state.coinCount[slot_index] += coin_increment;
 		}
 		break;
 
@@ -416,16 +424,15 @@ JVSStatus processPacket(JVSIO *jvsIO)
 		{
 			debug(1, "CMD_DECREASE_COINS\n");
 			size = 4;
+			int slot_index = inputPacket.data[index + 1];
 			int coin_decrement = ((int)(inputPacket.data[index + 2]) | ((int)(inputPacket.data[index + 3]) << 8));
 
 			outputPacket.data[outputPacket.length++] = REPORT_SUCCESS;
 
 			/* Prevent underflow of coins */
-			if (coin_decrement > jvsIO->state.coinCount[0])
-				coin_decrement = jvsIO->state.coinCount[0];
-
-			for (int i = 0; i < jvsIO->capabilities.coins; i++)
-				jvsIO->state.coinCount[i] -= coin_decrement;
+			if (coin_decrement > jvsIO->state.coinCount[slot_index])
+				coin_decrement = jvsIO->state.coinCount[slot_index];
+			jvsIO->state.coinCount[slot_index] -= coin_decrement;
 		}
 		break;
 
