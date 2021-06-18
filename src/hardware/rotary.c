@@ -15,28 +15,28 @@ JVSRotaryStatus initRotary()
     setupGPIO(18);
     if (!setGPIODirection(18, IN))
     {
-        debug(1, "Warning: Failed to set Raspberry Pi GPIO Pin 18");
+        debug(1, "Warning: Failed to set Raspberry Pi GPIO Pin 18\n");
         return JVS_ROTARY_STATUS_ERROR;
     }
 
     setupGPIO(19);
     if (!setGPIODirection(19, IN))
     {
-        debug(1, "Warning: Failed to set Raspberry Pi GPIO Pin 19");
+        debug(1, "Warning: Failed to set Raspberry Pi GPIO Pin 19\n");
         return JVS_ROTARY_STATUS_ERROR;
     }
 
     setupGPIO(20);
     if (!setGPIODirection(20, IN))
     {
-        debug(1, "Warning: Failed to set Raspberry Pi GPIO Pin 20");
+        debug(1, "Warning: Failed to set Raspberry Pi GPIO Pin 20\n");
         return JVS_ROTARY_STATUS_ERROR;
     }
 
     setupGPIO(21);
     if (!setGPIODirection(21, IN))
     {
-        debug(1, "Warning: Failed to set Raspberry Pi GPIO Pin 21");
+        debug(1, "Warning: Failed to set Raspberry Pi GPIO Pin 21\n");
         return JVS_ROTARY_STATUS_ERROR;
     }
 

@@ -32,14 +32,14 @@ int initDevice(char *devicePath, int senseLineType, int senseLinePin)
   switch (senseLineType)
   {
   case 0:
-    debug(1, "Debug: No sense line set");
+    debug(1, "Debug: No sense line set\n");
     break;
   case 1:
-    debug(1, "Debug: Float/Sync sense line set");
+    debug(1, "Debug: Float/Sync sense line set\n");
     setGPIODirection(senseLinePin, IN);
     break;
   case 2:
-    debug(1, "Debug: Complex sense line set");
+    debug(1, "Debug: Complex sense line set\n");
     setGPIODirection(senseLinePin, OUT);
     break;
   default:

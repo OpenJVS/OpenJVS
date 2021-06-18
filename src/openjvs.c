@@ -80,7 +80,7 @@ int main(int argc, char **argv)
     while (running != -1)
     {
         /* Init the watchdog to check the rotary and inputs */
-        debug(1, "Init watchdog");
+        debug(1, "Init watchdog\n");
         running = 1;
         setThreadsRunning(1);
         initWatchdog(&running, rotaryStatus);
@@ -95,7 +95,7 @@ int main(int argc, char **argv)
         JVSIO io = {0};
         io.deviceID = 1;
 
-        debug(1, "Init inputs");
+        debug(1, "Init inputs\n");
         JVSInputStatus inputStatus = initInputs(config.defaultGamePath, config.capabilitiesPath, &io, config.autoControllerDetection);
         if (inputStatus != JVS_INPUT_STATUS_SUCCESS)
         {
@@ -109,7 +109,7 @@ int main(int argc, char **argv)
 
         debug(0, "  Output:\t\t%s\n", config.defaultGamePath);
 
-        debug(1, "Parse IO");
+        debug(1, "Parse IO\n");
         JVSConfigStatus ioStatus = parseIO(config.capabilitiesPath, &io.capabilities);
         if (ioStatus != JVS_CONFIG_STATUS_SUCCESS)
         {
@@ -125,7 +125,7 @@ int main(int argc, char **argv)
         }
 
         /* Init the Virtual IO */
-        debug(1, "Init IO");
+        debug(1, "Init IO\n");
         if (!initIO(&io))
         {
             debug(0, "Critical: Failed to init IO\n");
@@ -133,7 +133,7 @@ int main(int argc, char **argv)
         }
 
         /* Setup the JVS Emulator with the RS485 path and capabilities */
-        debug(1, "Init JVS");
+        debug(1, "Init JVS\n");
         if (!initJVS(&io))
         {
             debug(0, "Critical: Could not initialise JVS\n");
