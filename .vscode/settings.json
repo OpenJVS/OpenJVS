@@ -14,7 +14,9 @@
         "pthread.h": "c",
         "stdbool.h": "c",
         "string.h": "c",
-        "rotary.h": "c"
+        "rotary.h": "c",
+        "ffb.h": "c",
+        "wheel.h": "c"
     },
     "editor.formatOnPaste": true,
     "editor.formatOnSave": true,
