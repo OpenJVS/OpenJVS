@@ -35,7 +35,11 @@ dtoverlay=uart4
 
 Next you must modify cmdline.txt
 
-Remove the initial serial console line.
+Remove the initial serial console line, which will look like the following. Remove from `console` up to the first space.
+
+```
+console=serial0,115200
+```
 
 Now we need to setup WiFi. Add a file called wpa_supplicant.conf to the boot partition, containing the following. You will need to add your ssid, and password as well as country code. More information can be found here: https://www.raspberrypi.org/documentation/configuration/wireless/headless.md.
 
