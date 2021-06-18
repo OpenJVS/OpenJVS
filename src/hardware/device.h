@@ -27,5 +27,6 @@ int setSenseLine(int state);
 int setupGPIO(int pin);
 int setGPIODirection(int pin, int dir);
 int readGPIO(int pin);
+int setSerialAttributes(int fd, int myBaud);
 
 #endif // DEVICE_H_

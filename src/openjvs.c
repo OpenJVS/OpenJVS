@@ -95,12 +95,15 @@ int main(int argc, char **argv)
             parseRotary(DEFAULT_ROTARY_PATH, rotaryValue, config.defaultGamePath);
         }
 
-        // Create the JVSIO
+        // Create the JVSIO & FFB Emulation
         JVSIO io = {0};
+        FFBState ffb = {0};
+
+        // Make OpenJVS automatically start with a device ID so it can bypass init
         io.deviceID = 1;
 
         debug(1, "Init inputs\n");
-        JVSInputStatus inputStatus = initInputs(config.defaultGamePath, config.capabilitiesPath, &io, config.autoControllerDetection);
+        JVSInputStatus inputStatus = initInputs(config.defaultGamePath, config.capabilitiesPath, &io, &ffb, config.autoControllerDetection);
 
         // Only report these errors if the status has changed
         // from the last run. Since we restart this thread every 200ms
@@ -177,6 +180,17 @@ int main(int argc, char **argv)
         }
 
         debug(0, "\nYou are currently emulating a \033[0;31m%s\033[0m on %s.\n\n", io.capabilities.displayName, config.devicePath);
+
+        /* Setup the FFB Emulator */
+        debug(1, "Init FFB");
+        int enableFFB = 1;
+        if (enableFFB)
+        {
+            if (initFFB(&ffb, &io, FFB_EMULATION_TYPE_SEGA, "/dev/ttyUSB0") != FFB_STATUS_SUCCESS)
+            {
+                debug(0, "Warning: Could not initialise the FFB");
+            }
+        }
 
         /* Process packets forever */
         JVSStatus processingStatus;

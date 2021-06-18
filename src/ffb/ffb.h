@@ -2,6 +2,19 @@
 #define FFB_H_
 
 #include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <string.h>
+#include <termios.h>
+#include <unistd.h>
+#include <time.h>
+#include <stdarg.h>
+#include <sys/ioctl.h>
+#include <linux/serial.h>
+
+#include "jvs/io.h"
 
 typedef enum
 {
@@ -22,9 +35,11 @@ typedef struct
     int controller;
     int serial;
     pthread_t threadID;
+    volatile int running;
+    JVSIO *io;
 } FFBState;
 
-FFBStatus initFFB(FFBState *state, FFBEmulationType type, char *serialPath);
+FFBStatus initFFB(FFBState *state, JVSIO *io, FFBEmulationType type, char *serialPath);
 FFBStatus bindController(FFBState *state, int controller);
 FFBStatus closeFFB(FFBState *state);
 

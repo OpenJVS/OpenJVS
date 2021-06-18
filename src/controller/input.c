@@ -40,6 +40,7 @@ typedef struct
     char devicePath[MAX_PATH_LENGTH];
     EVInputs inputs;
     int player;
+    FFBState *ffb;
 } MappingThreadArguments;
 
 void *wiiDeviceThread(void *_args)
@@ -170,6 +171,13 @@ void *deviceThread(void *_args)
         printf("Critical: Failed to open device file descriptor %d \n", fd);
         free(args);
         return 0;
+    }
+
+    // If we had a FFB struct passed in, try to bind this controller to the FFB emulator
+    if (args->ffb != NULL)
+    {
+        printf("gonna bind\n");
+        bindController(args->ffb, fd);
     }
 
     struct input_event event;
@@ -321,13 +329,14 @@ void *deviceThread(void *_args)
 
     return 0;
 }
-void startThread(EVInputs *inputs, char *devicePath, int wiiMode, int player, JVSIO *jvsIO)
+void startThread(EVInputs *inputs, char *devicePath, int wiiMode, int player, JVSIO *jvsIO, FFBState *ffb)
 {
     MappingThreadArguments *args = malloc(sizeof(MappingThreadArguments));
     strcpy(args->devicePath, devicePath);
     memcpy(&args->inputs, inputs, sizeof(EVInputs));
     args->player = player;
     args->jvsIO = jvsIO;
+    args->ffb = ffb;
 
     if (wiiMode)
     {
@@ -584,8 +593,8 @@ static JVSInputStatus initInputsWiimote(int *playerNumber, DeviceList *deviceLis
                 continue;
             }
 
-            startThread(&evInputs, deviceList->devices[infraredDevice].path, 1, *playerNumber, jvsIO);
-            startThread(&evInputs, deviceList->devices[controlDevice].path, 0, *playerNumber, jvsIO);
+            startThread(&evInputs, deviceList->devices[infraredDevice].path, 1, *playerNumber, jvsIO, NULL);
+            startThread(&evInputs, deviceList->devices[controlDevice].path, 0, *playerNumber, jvsIO, NULL);
 
             debug(0, "  Player %d:\t\t%s\n", *playerNumber, deviceList->devices[i].fullName);
 
@@ -598,7 +607,7 @@ static JVSInputStatus initInputsWiimote(int *playerNumber, DeviceList *deviceLis
     return JVS_INPUT_STATUS_SUCCESS;
 }
 
-static JVSInputStatus initInputsNormalMapped(int *playerNumber, DeviceList *deviceList, OutputMappings *outputMappings, JVSIO *jvsIO, int autoDetect)
+static JVSInputStatus initInputsNormalMapped(int *playerNumber, DeviceList *deviceList, OutputMappings *outputMappings, JVSIO *jvsIO, FFBState *ffb, int autoDetect)
 {
     for (int i = 0; i < deviceList->length; i++)
     {
@@ -651,7 +660,7 @@ static JVSInputStatus initInputsNormalMapped(int *playerNumber, DeviceList *devi
             continue;
         }
 
-        startThread(&evInputs, deviceList->devices[i].path, 0, *playerNumber, jvsIO);
+        startThread(&evInputs, deviceList->devices[i].path, 0, *playerNumber, jvsIO, ffb);
         debug(0, "  Player %d:\t\t%s%s\n", *playerNumber, deviceList->devices[i].name, specialMap);
         (*playerNumber)++;
     }
@@ -701,7 +710,7 @@ static JVSInputStatus initInputsAimtrak(int *playerNumber, DeviceList *deviceLis
             continue;
         }
 
-        startThread(&evInputs, deviceList->devices[i].path, 0, *playerNumber, jvsIO);
+        startThread(&evInputs, deviceList->devices[i].path, 0, *playerNumber, jvsIO, NULL);
 
         // In case someone has connected 2 Aimtrak for instance, we never know :)
         if (FirstDetectedAimtrak[0] == '\0' || (strcmp(FirstDetectedAimtrak, deviceList->devices[i].name) == 0))
@@ -720,7 +729,7 @@ static JVSInputStatus initInputsAimtrak(int *playerNumber, DeviceList *deviceLis
     return JVS_INPUT_STATUS_SUCCESS;
 }
 
-JVSInputStatus initInputs(char *outputMappingPath, char *configPath, JVSIO *jvsIO, int autoDetect)
+JVSInputStatus initInputs(char *outputMappingPath, char *configPath, JVSIO *jvsIO, FFBState *ffb, int autoDetect)
 {
     JVSInputStatus retval = JVS_INPUT_STATUS_SUCCESS;
     DeviceList *deviceList = NULL;
@@ -753,7 +762,7 @@ JVSInputStatus initInputs(char *outputMappingPath, char *configPath, JVSIO *jvsI
     {
         int playerNumber = 1;
 
-        initInputsNormalMapped(&playerNumber, deviceList, &outputMappings, jvsIO, autoDetect);
+        initInputsNormalMapped(&playerNumber, deviceList, &outputMappings, jvsIO, ffb, autoDetect);
         initInputsWiimote(&playerNumber, deviceList, &outputMappings, jvsIO);
         initInputsAimtrak(&playerNumber, deviceList, &outputMappings, jvsIO);
     }
