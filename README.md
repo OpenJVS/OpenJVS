@@ -6,9 +6,10 @@ OpenJVS is an emulator for I/O boards in arcade machines that use the JVS protoc
 
 The following arcade boards are supported:
 
-- Sega Naomi 1/2
+- Naomi 1/2
 - Triforce
 - Chihiro
+- Hikaru
 - Lindbergh
 - Ringedge 1/2
 - Namco System 22/23
