@@ -401,7 +401,7 @@ JVSStatus processPacket(JVSIO *jvsIO)
 			debug(1, "CMD_WRITE_COINS\n");
 			size = 4;
 			int slot_index = inputPacket.data[index + 1];
-			int coin_increment = ((int)(inputPacket.data[index + 2]) | ((int)(inputPacket.data[index + 3]) << 8));
+			int coin_increment = ((int)(inputPacket.data[index + 3]) | ((int)(inputPacket.data[index + 2]) << 8));
 
 			outputPacket.data[outputPacket.length++] = REPORT_SUCCESS;
 
@@ -425,7 +425,7 @@ JVSStatus processPacket(JVSIO *jvsIO)
 			debug(1, "CMD_DECREASE_COINS\n");
 			size = 4;
 			int slot_index = inputPacket.data[index + 1];
-			int coin_decrement = ((int)(inputPacket.data[index + 2]) | ((int)(inputPacket.data[index + 3]) << 8));
+			int coin_decrement = ((int)(inputPacket.data[index + 3]) | ((int)(inputPacket.data[index + 2]) << 8));
 
 			outputPacket.data[outputPacket.length++] = REPORT_SUCCESS;
 
