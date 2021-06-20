@@ -482,7 +482,6 @@ JVSStatus processPacket(JVSIO *jvsIO)
 		}
 		index += size;
 	}
-	debug(1, "");
 
 	return writePacket(&outputPacket);
 }
