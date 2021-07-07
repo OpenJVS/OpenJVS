@@ -117,6 +117,8 @@ int main(int argc, char **argv)
                 case JVS_INPUT_STATUS_OUTPUT_MAPPING_ERROR:
                     debug(0, "Error: Cannot find an output mapping\n");
                     break;
+                default:
+                    break;
             }
 
             if (inputStatus != JVS_INPUT_STATUS_SUCCESS)
