@@ -17,6 +17,7 @@
 /* Time between reinit in ms */
 #define TIME_REINIT 200
 
+void cleanup();
 void handleSignal(int signal);
 
 volatile int running = 1;
@@ -77,6 +78,8 @@ int main(int argc, char **argv)
         rotaryStatus = initRotary();
     }
 
+    JVSInputStatus lastInputState = JVS_INPUT_STATUS_SUCCESS;
+    int lastRotaryValue = -1;
     while (running != -1)
     {
         /* Init the watchdog to check the rotary and inputs */
@@ -97,12 +100,43 @@ int main(int argc, char **argv)
 
         debug(1, "Init inputs\n");
         JVSInputStatus inputStatus = initInputs(config.defaultGamePath, config.capabilitiesPath, &io, config.autoControllerDetection);
-        if (inputStatus != JVS_INPUT_STATUS_SUCCESS)
+
+        // Only report these errors if the status has changed
+        // from the last run. Since we restart this thread every 200ms
+        // on errors, we could end up spamming the logs extremely quickly
+        // when a controller just isn't plugged in.
+        if (inputStatus != lastInputState)
         {
-            debug(0, "Critical: Could not initialise any inputs, check they're plugged in and you are root!\n");
+            switch (inputStatus) {
+                case JVS_INPUT_STATUS_MALLOC_ERROR:
+                    debug(0, "Error: Failed to malloc\n");
+                    break;
+                case JVS_INPUT_STATUS_DEVICE_OPEN_ERROR:
+                    debug(0, "Error: Failed to open devices\n");
+                    break;
+                case JVS_INPUT_STATUS_OUTPUT_MAPPING_ERROR:
+                    debug(0, "Error: Cannot find an output mapping\n");
+                    break;
+                default:
+                    break;
+            }
+
+            if (inputStatus != JVS_INPUT_STATUS_SUCCESS)
+            {
+                debug(0, "Critical: Could not initialise any inputs, check they're plugged in and you are root!\n");
+            }
         }
 
-        if (rotaryStatus == JVS_ROTARY_STATUS_SUCCESS)
+        if (inputStatus != JVS_INPUT_STATUS_SUCCESS)
+        {
+            // Cleanup then wait before reconnecting
+            lastInputState = inputStatus;
+            lastRotaryValue = rotaryValue;
+            cleanup();
+            continue;
+        }
+
+        if (rotaryStatus == JVS_ROTARY_STATUS_SUCCESS && rotaryValue != lastRotaryValue)
         {
             debug(0, "  Rotary Position:\t%d\n", rotaryValue);
         }
@@ -163,11 +197,9 @@ int main(int argc, char **argv)
             }
         }
 
-        /* Stop threads managed by ThreadManager */
-        stopAllThreads();
-
-        /* Take a short break on reinit to reduce load */
-        usleep(TIME_REINIT);
+        lastInputState = inputStatus;
+        lastRotaryValue = rotaryValue;
+        cleanup();
     }
 
     /* Close the file pointer */
@@ -178,6 +210,15 @@ int main(int argc, char **argv)
     }
 
     return EXIT_SUCCESS;
+}
+
+void cleanup()
+{
+    /* Stop threads managed by ThreadManager */
+    stopAllThreads();
+
+    /* Take a short break on reinit to reduce load */
+    usleep(TIME_REINIT);
 }
 
 void handleSignal(int signal)

@@ -730,16 +730,14 @@ JVSInputStatus initInputs(char *outputMappingPath, char *configPath, JVSIO *jvsI
 
     if (deviceList == NULL)
     {
-        debug(0, "Error: Failed to malloc\n");
-        retval = JVS_INPUT_STATUS_ERROR;
+        retval = JVS_INPUT_STATUS_MALLOC_ERROR;
     }
 
     if (retval == JVS_INPUT_STATUS_SUCCESS)
     {
         if (!getInputs(deviceList))
         {
-            debug(0, "Error: Failed to open devices\n");
-            retval = JVS_INPUT_STATUS_ERROR;
+            retval = JVS_INPUT_STATUS_DEVICE_OPEN_ERROR;
         }
     }
 
@@ -747,8 +745,7 @@ JVSInputStatus initInputs(char *outputMappingPath, char *configPath, JVSIO *jvsI
     {
         if (parseOutputMapping(outputMappingPath, &outputMappings, configPath) != JVS_CONFIG_STATUS_SUCCESS)
         {
-            debug(0, "Error: Cannot find an output mapping\n");
-            retval = JVS_INPUT_STATUS_ERROR;
+            retval = JVS_INPUT_STATUS_OUTPUT_MAPPING_ERROR;
         }
     }
 
