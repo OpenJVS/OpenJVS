@@ -165,7 +165,7 @@ void *deviceThread(void *_args)
 {
     MappingThreadArguments *args = (MappingThreadArguments *)_args;
 
-    int fd = open(args->devicePath, O_RDONLY);
+    int fd = open(args->devicePath, O_RDWR | O_NONBLOCK);
     if (fd < 0)
     {
         printf("Critical: Failed to open device file descriptor %d \n", fd);
@@ -176,7 +176,7 @@ void *deviceThread(void *_args)
     // If we had a FFB struct passed in, try to bind this controller to the FFB emulator
     if (args->ffb != NULL)
     {
-        printf("gonna bind\n");
+        printf("Binding the controller to the FFB Emulator Thread\n");
         bindController(args->ffb, fd);
     }
 

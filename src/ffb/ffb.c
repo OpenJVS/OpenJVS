@@ -37,7 +37,7 @@ FFBStatus closeFFB(FFBState *state)
 
 FFBStatus bindController(FFBState *state, int controller)
 {
-    printf("Controller bounding\n");
+    printf("bindController() Called\n");
 
     if (state->controller > 0)
         return FFB_STATUS_ERROR_CONTROLLED_ALREADY_BOUND;
@@ -46,11 +46,10 @@ FFBStatus bindController(FFBState *state, int controller)
     {
         printf("Failed to init controller\n");
     }
-    else
-    {
-        printf("Controller bound all good\n");
-        state->controller = controller;
-    }
+
+    setCentering(0);
+    setGain(100);
+    setForce(0);
 
     return FFB_STATUS_SUCCESS;
 }
@@ -91,146 +90,141 @@ void processSEGAFFB(FFBState *state)
 
     int turnWheel = 0;
 
-    double wheelPos = 0.5;
+    int wheelMax = state->io->analogueMax;
+    double wheelPos = (double)state->io->state.analogueChannel[0] / (double)wheelMax;
 
     unsigned char buffer[4] = {0};
     int index = 0;
 
-    int move = 0;
-    double amount = 0.01;
+    double amount = 0.1;
+
+    setRumble(0);
+    setForce(0);
+    setCentering(0);
+    setGain(100);
+
     while (state->running)
     {
+        int keepAlive = 0;
+        wheelPos = (double)state->io->state.analogueChannel[0] / (double)wheelMax;
         unsigned char byte = 0;
         if (readSerialBytes(state->serial, &byte, 1) > 0)
         {
             buffer[index++] = byte;
         }
-
         if (index == 4)
         {
+
             index = 0;
-            printf("0x%02hhX 0x%02hhX 0x%02hhX 0x%02hhX %d\n", buffer[0], buffer[1], buffer[2], buffer[3], reply);
 
             switch (buffer[0])
             {
+            case 0x0B:
+                setCentering(100);
+                break;
             case 0xFF: // Reset
                 printf("RESET\n");
-                wheelPos = 0.5;
                 reply = READY;
                 break;
             case 0x81:
-                printf("Unsure, not init\n");
+                printf("RESET 2\n");
                 reply = NOT_INIT;
                 break;
             case 0xFC:
-                printf("WHEEL INIT\n");
+                setCentering(0);
+                printf("START_INIT\n");
                 turnWheel = 1;
                 break;
-            case 0x9D:
-            {
-                if (move)
-                {
-                    printf("0x80 Moving");
-                    if (wheelPos >= 1 && amount > 0)
-                    {
-                        break;
-                    }
-
-                    if (wheelPos <= 0 && amount < 0)
-                    {
-                        break;
-                    }
-
-                    wheelPos = wheelPos + amount;
-                }
-            }
-            break;
-
             case 0x80:
             {
                 if (buffer[1] == 0 && buffer[2] == 0)
                 {
                     printf("STOP!\n");
-                    move = 0;
+                    setForce(0);
                 }
                 if (buffer[1] == 1 && buffer[2] == 1)
                 {
 
-                    if (move)
-                    {
-                        printf("0x80 Moving");
-                        if (wheelPos >= 1 && amount > 0)
-                        {
-                            break;
-                        }
+                    if (wheelPos >= 0.9 && amount > 0)
+                        break;
 
-                        if (wheelPos <= 0 && amount < 0)
-                        {
-                            break;
-                        }
+                    if (wheelPos <= 0.1 && amount < 0)
+                        break;
 
-                        wheelPos = wheelPos + amount;
-                    }
+                    setForce(amount);
                 }
             }
             break;
             case 0x9e:
-            case 0x84: // Move
+            case 0x84: // Set the moving amount
             {
-                printf("Moving 0x%02hhX 0x%02hhX 0x%02hhX 0x%02hhX %d\n", buffer[0], buffer[1], buffer[2], buffer[3], reply);
-
-                move = 1;
+                //keepAlive = 1;
+                reply = READY;
                 if (buffer[1] == 1)
-                {
-                    amount = -0.0001 * buffer[2];
-                }
+                    amount = (-1 * ((double)buffer[2] / 128.0)) * 2;
 
                 if (buffer[1] == 0)
-                {
-                    amount = 0.0001 * buffer[2];
-                }
+                    amount = (1 - ((double)buffer[2] / 128.0)) * 2;
+
+                printf("SET_AMOUNT %f\n", amount);
+
+                setForce(amount);
             }
             break;
+            case 0xFA:
             case 0xFD:
             {
-                printf("Keep alive\n");
+                keepAlive = 1;
+
+                // Sort the auto turn right init
                 if (turnWheel)
                 {
-                    printf("Auto spin to right\n");
                     reply = BUSY;
-                    wheelPos += 0.01;
-                    if (wheelPos > 0.6)
+                    setForce(0.2);
+                    if (wheelPos > 0.9)
                     {
                         reply = READY;
                         turnWheel = 0;
+                        setForce(0);
                     }
                 }
-
-                if (move)
+            }
+            break;
+            case 0xFB: // Rumble Command
+            {
+                printf("0x%02hhX 0x%02hhX 0x%02hhX 0x%02hhX %d\n", buffer[0], buffer[1], buffer[2], buffer[3], reply);
+                printf("RUMBLE\n");
+                switch (buffer[2])
                 {
-                    printf("BOBBY DILLEY - Moving %f %f\n", wheelPos, amount);
-                    if (wheelPos >= 1 && amount > 0)
-                    {
-                        break;
-                    }
-
-                    if (wheelPos <= 0 && amount < 0)
-                    {
-                        break;
-                    }
-
-                    wheelPos = wheelPos + amount;
+                case 0x00: // Grass
+                    setRumble(10);
+                    break;
+                case 0x02:
+                    setRumble(20);
+                    break;
+                case 0x10: // Car
+                    setRumble(50);
+                    break;
+                case 0x0B: // Hit Left
+                case 0x1B: // Hit Right
+                    setRumble(80);
+                    break;
+                case 0x04:
+                { // Road Again?
+                    printf("ROAD AGAIN\n");
                 }
+                break;
+                }
+                setCentering(100);
             }
             break;
             default:
                 printf("0x%02hhX 0x%02hhX 0x%02hhX 0x%02hhX %d\n", buffer[0], buffer[1], buffer[2], buffer[3], reply);
-
                 break;
             }
-            printf(" WHEEL POS %f\n", wheelPos);
 
-            setAnalogue(state->io, ANALOGUE_1, wheelPos);
+            if (!keepAlive)
+                setForce(0);
 
             writeSerialBytes(state->serial, &reply, 1);
         }

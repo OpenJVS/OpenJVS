@@ -34,7 +34,8 @@ unsigned char ff_bits[1 + FF_MAX / 8 / sizeof(unsigned char)];
 
 int device_handle = -1;
 struct input_event event;
-struct ff_effect effect;
+struct ff_effect forceEffect;
+struct ff_effect rumbleEffect;
 
 unsigned char lastFFB;
 
@@ -59,6 +60,7 @@ unsigned char reverse(unsigned char b)
 
 int setCentering(int value)
 {
+    printf("Device handle %d\n", device_handle);
     if (device_handle == -1)
         return 0;
 
@@ -108,18 +110,42 @@ int setForce(double force)
         force = 1.0;
     else if (force < -1.0)
         force = -1.0;
-    effect.u.constant.level = (short)(force * 32767.0);
-    effect.direction = 0xC000;
-    effect.u.constant.envelope.attack_level = (short)(force * 32767.0); /* this one counts! */
-    effect.u.constant.envelope.fade_level = (short)(force * 32767.0);   /* only to be safe */
+    forceEffect.u.constant.level = (short)(force * 32767.0);
+    forceEffect.direction = 0xC000;
+    forceEffect.u.constant.envelope.attack_level = (short)(force * 32767.0); /* this one counts! */
+    forceEffect.u.constant.envelope.fade_level = (short)(force * 32767.0);   /* only to be safe */
 
     /* Upload effect */
-    if (ioctl(device_handle, EVIOCSFF, &effect) < 0)
+    if (ioctl(device_handle, EVIOCSFF, &forceEffect) < 0)
     {
         perror("upload effect");
         /* We do not exit here. Indeed, too frequent updates may be
 		 * refused, but that is not a fatal error */
     }
+    return 1;
+}
+
+int setRumble(double force)
+{
+    rumbleEffect.u.periodic.magnitude = 0xffff * (force / 100.0);
+    rumbleEffect.u.periodic.envelope.attack_level = 0xffff * (force / 100.0);
+    rumbleEffect.u.periodic.envelope.fade_level = 0xffff * (force / 100.0);
+
+    if (ioctl(device_handle, EVIOCSFF, &rumbleEffect) < 0)
+        perror("upload effect rumble");
+
+    /* Start effect */
+    memset(&event, 0, sizeof(event));
+    event.type = EV_FF;
+    event.code = rumbleEffect.id;
+    event.value = 1;
+    if (write(device_handle, &event, sizeof(event)) != sizeof(event))
+    {
+        fprintf(stderr, "ERROR: starting effect failed (%s) [%s:%d]\n",
+                strerror(errno), __FILE__, __LINE__);
+        return 0;
+    }
+
     return 1;
 }
 
@@ -134,6 +160,7 @@ int initWheel(int fd)
 
     /* Update global device handle */
     device_handle = fd;
+    printf("dev hand %d\n", device_handle);
 
     /* Now get some information about force feedback */
     memset(ff_bits, 0, sizeof(ff_bits));
@@ -152,24 +179,33 @@ int initWheel(int fd)
         return 0;
     }
 
-    /* Setup constant force */
-    /* Initialize constant force effect */
-    memset(&effect, 0, sizeof(effect));
-    effect.type = FF_CONSTANT;
-    effect.id = -1;
-    effect.trigger.button = 0;
-    effect.trigger.interval = 0;
-    effect.replay.length = 0xffff;
-    effect.replay.delay = 0;
-    effect.u.constant.level = 0;
-    effect.direction = 0xC000;
-    effect.u.constant.envelope.attack_length = 0;
-    effect.u.constant.envelope.attack_level = 0;
-    effect.u.constant.envelope.fade_length = 0;
-    effect.u.constant.envelope.fade_level = 0;
+    /* force feedback supported? */
+    if (!testBit(FF_PERIODIC, ff_bits))
+    {
+        fprintf(stderr, "ERROR: device (or driver) has no rumble support [%s:%d]\n",
+                __FILE__, __LINE__);
+        return 0;
+    }
+
+    memset(&rumbleEffect, 0, sizeof(rumbleEffect));
+    rumbleEffect.type = FF_PERIODIC;
+    rumbleEffect.id = -1;
+    rumbleEffect.u.periodic.waveform = FF_SINE;
+    rumbleEffect.u.periodic.period = 100;  /* 0.1 second */
+    rumbleEffect.u.periodic.magnitude = 0; /* 0.5 * Maximum magnitude */
+    rumbleEffect.u.periodic.offset = 0;
+    rumbleEffect.u.periodic.phase = 0;
+    rumbleEffect.direction = 0x4000; /* Along X axis */
+    rumbleEffect.u.periodic.envelope.attack_length = 1000;
+    rumbleEffect.u.periodic.envelope.attack_level = 0;
+    rumbleEffect.u.periodic.envelope.fade_length = 1000;
+    rumbleEffect.u.periodic.envelope.fade_level = 0;
+    rumbleEffect.trigger.button = 0;
+    rumbleEffect.trigger.interval = 0;
+    rumbleEffect.replay.length = 100;
 
     /* Upload effect */
-    if (ioctl(device_handle, EVIOCSFF, &effect) < 0)
+    if (ioctl(device_handle, EVIOCSFF, &rumbleEffect) < 0)
     {
         fprintf(stderr, "ERROR: uploading effect failed (%s) [%s:%d]\n",
                 strerror(errno), __FILE__, __LINE__);
@@ -179,7 +215,43 @@ int initWheel(int fd)
     /* Start effect */
     memset(&event, 0, sizeof(event));
     event.type = EV_FF;
-    event.code = effect.id;
+    event.code = rumbleEffect.id;
+    event.value = 1;
+    if (write(device_handle, &event, sizeof(event)) != sizeof(event))
+    {
+        fprintf(stderr, "ERROR: starting effect failed (%s) [%s:%d]\n",
+                strerror(errno), __FILE__, __LINE__);
+        return 0;
+    }
+
+    /* Setup constant force */
+    /* Initialize constant force effect */
+    memset(&forceEffect, 0, sizeof(forceEffect));
+    forceEffect.type = FF_CONSTANT;
+    forceEffect.id = -1;
+    forceEffect.trigger.button = 0;
+    forceEffect.trigger.interval = 0;
+    forceEffect.replay.length = 0xffff;
+    forceEffect.replay.delay = 0;
+    forceEffect.u.constant.level = 0;
+    forceEffect.direction = 0xC000;
+    forceEffect.u.constant.envelope.attack_length = 0;
+    forceEffect.u.constant.envelope.attack_level = 0;
+    forceEffect.u.constant.envelope.fade_length = 0;
+    forceEffect.u.constant.envelope.fade_level = 0;
+
+    /* Upload effect */
+    if (ioctl(device_handle, EVIOCSFF, &forceEffect) < 0)
+    {
+        fprintf(stderr, "ERROR: uploading effect failed (%s) [%s:%d]\n",
+                strerror(errno), __FILE__, __LINE__);
+        return 0;
+    }
+
+    /* Start effect */
+    memset(&event, 0, sizeof(event));
+    event.type = EV_FF;
+    event.code = forceEffect.id;
     event.value = 1;
     if (write(device_handle, &event, sizeof(event)) != sizeof(event))
     {
