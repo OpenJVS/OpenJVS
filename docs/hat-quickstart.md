@@ -87,7 +87,7 @@ sudo apt install git cmake evtest
 Clone openjvs 
 
 ```
-git clone https://github.com/openjvs/openjvs`
+git clone https://github.com/openjvs/openjvs
 ```
 
 Make and install OpenJVS
