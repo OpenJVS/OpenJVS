@@ -472,11 +472,70 @@ JVSStatus processPacket(JVSIO *jvsIO)
 		}
 		break;
 
+		/* Namco Specific */
+		case CMD_NAMCO_SPECIFIC:
+		{
+			debug(1, "CMD_NAMCO_SPECIFIC\n");
+
+			outputPacket.data[outputPacket.length++] = REPORT_SUCCESS;
+
+			size = 2;
+
+			switch (inputPacket.data[index + 1])
+			{
+
+			// Read 8 bytes of memory
+			case 0x01:
+			{
+				for (int i = 0; i < 8; i++)
+					outputPacket.data[outputPacket.length++] = 0xFF;
+			}
+			break;
+
+			// Read the program date
+			case 0x02:
+			{
+				// 1998 October 26th at 12:00:00 (Unsure what last 00 is)
+				unsigned char programDate[] = {0x19, 0x98, 0x10, 0x26, 0x12, 0x00, 0x00, 0x00};
+				memcpy(&outputPacket.data[outputPacket.length], programDate, 8);
+				outputPacket.length += 8;
+			}
+			break;
+
+			// Dip switch status
+			case 0x03:
+			{
+				unsigned char dips = 0xFF;
+				outputPacket.data[outputPacket.length++] = dips;
+			}
+			break;
+
+			// Unsure
+			case 0x04:
+			{
+				outputPacket.data[outputPacket.length++] = 0xFF;
+				outputPacket.data[outputPacket.length++] = 0xFF;
+			}
+			break;
+
+			// ID Check (0xFF is what Triforce branch sends)
+			case 0x18:
+			{
+				size += 4;
+				outputPacket.data[outputPacket.length++] = 0xFF;
+			}
+			break;
+
+			default:
+			{
+				debug(0, "CMD_NAMCO_UNSUPPORTED (Unsupported namco command [0x%02hhX])", inputPacket.data[index + 1]);
+			}
+			}
+		}
+		break;
+
 		default:
 		{
-			if (inputPacket.data[index] == CMD_NAMCO_SPECIFIC)
-				debug(0, "CMD_NAMCO_SPECIFIC (Command shown below)\n");
-
 			debug(0, "CMD_UNSUPPORTED (Unsupported command [0x%02hhX])\n", inputPacket.data[index]);
 		}
 		}
