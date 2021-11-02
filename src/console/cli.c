@@ -3,9 +3,9 @@
 #include <string.h>
 
 #include "console/cli.h"
-
 #include "console/config.h"
 #include "console/debug.h"
+#include "version.h"
 
 /**
  * Print usage information
@@ -38,7 +38,7 @@ JVSCLIStatus printUsage()
  **/
 JVSCLIStatus printVersion()
 {
-    debug(0, "3.3.3\n");
+    debug(0, "%s\n", PROJECT_VER);
     return JVS_CLI_STATUS_SUCCESS_CLOSE;
 }
 

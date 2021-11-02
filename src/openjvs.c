@@ -13,6 +13,7 @@
 #include "jvs/io.h"
 #include "jvs/jvs.h"
 #include "ffb/ffb.h"
+#include "version.h"
 
 /* Time between reinit in ms */
 #define TIME_REINIT 200
@@ -53,7 +54,7 @@ int main(int argc, char **argv)
         break;
     }
 
-    debug(0, "OpenJVS Version 3.4\n\n");
+    debug(0, "OpenJVS Version %s\n\n", PROJECT_VER);
 
     /* Init the thread managre */
     ThreadStatus threadStatus = initThreadManager();
@@ -107,18 +108,19 @@ int main(int argc, char **argv)
         // when a controller just isn't plugged in.
         if (inputStatus != lastInputState)
         {
-            switch (inputStatus) {
-                case JVS_INPUT_STATUS_MALLOC_ERROR:
-                    debug(0, "Error: Failed to malloc\n");
-                    break;
-                case JVS_INPUT_STATUS_DEVICE_OPEN_ERROR:
-                    debug(0, "Error: Failed to open devices\n");
-                    break;
-                case JVS_INPUT_STATUS_OUTPUT_MAPPING_ERROR:
-                    debug(0, "Error: Cannot find an output mapping\n");
-                    break;
-                default:
-                    break;
+            switch (inputStatus)
+            {
+            case JVS_INPUT_STATUS_MALLOC_ERROR:
+                debug(0, "Error: Failed to malloc\n");
+                break;
+            case JVS_INPUT_STATUS_DEVICE_OPEN_ERROR:
+                debug(0, "Error: Failed to open devices\n");
+                break;
+            case JVS_INPUT_STATUS_OUTPUT_MAPPING_ERROR:
+                debug(0, "Error: Cannot find an output mapping\n");
+                break;
+            default:
+                break;
             }
 
             if (inputStatus != JVS_INPUT_STATUS_SUCCESS)
