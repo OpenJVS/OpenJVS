@@ -1,0 +1,42 @@
+###############################################################
+#   OpenJVS: Logitech MOMO Red Mapping File
+#   ---------+-----------------------+----------------
+#   Version  | Date                  | Description
+#   ---------+-----------------------+----------------
+#     0.1    | 1st of September 2021 | Initial version
+#   ---------+-----------------------+----------------
+###############################################################
+
+# ======================================
+# STEERING WHEELS AND PEDALS CONTROL SET
+# ======================================
+
+# Wheel:
+# --------------------------------------------------
+ABS_X CONTROLLER_ANALOGUE_X
+
+# Pedals (Accelerator, Brake)
+# --------------------------------------------------
+ABS_Y CONTROLLER_ANALOGUE_R REVERSE
+ABS_Z CONTROLLER_ANALOGUE_L REVERSE
+
+# 2 gearshifts on the wheel (left to right):
+# --------------------------------------------------
+BTN_TRIGGER CONTROLLER_BUTTON_LEFT_BUMPER
+BTN_THUMB CONTROLLER_BUTTON_RIGHT_BUMPER
+
+# ======================================
+# FACE BUTTONS
+# ======================================
+
+# 2 bottom white buttons (left to right):
+# --------------------------------------------------
+BTN_BASE CONTROLLER_BUTTON_TEST
+BTN_BASE2 CONTROLLER_BUTTON_SERVICE
+
+# Green, red, blue, yellow buttons:
+# --------------------------------------------------
+BTN_THUMB2 CONTROLLER_BUTTON_DOWN
+BTN_TOP CONTROLLER_BUTTON_START
+BTN_TOP2 CONTROLLER_BUTTON_A
+BTN_PINKIE CONTROLLER_BUTTON_B

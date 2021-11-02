@@ -1,0 +1,59 @@
+###############################################################
+#   OpenJVS: Logitech Driving Force maping file
+#   ---------+--------------------+----------------
+#   Version  |    Date            | Description
+#   ---------+--------------------+----------------
+#     0.1    | 17th of June 2021  | initial version for OpenJVS3.2.0
+#   ---------+--------------------+----------------
+###############################################################
+
+# ======================================
+# STEERING WHEELS AND PEDALS CONTROL SET
+# ======================================
+# Steering Wheel:
+# ---------------------------------------------------
+ABS_X CONTROLLER_ANALOGUE_X
+
+# 2 Pedals (Break [ABS_RZ], Accelerator [ABS_Y]):
+# ---------------------------------------------------
+ABS_RZ CONTROLLER_ANALOGUE_R REVERSE
+ABS_Y CONTROLLER_ANALOGUE_L REVERSE
+#ABS_Z
+
+# ================
+# GEAR CONTROL SET
+# ================
+# 4 PlayStation shoulder buttons (gearshifts) on the wheel face (left side /  right side):
+# ---------------------------------------------------
+BTN_PINKIE CONTROLLER_BUTTON_LEFT_BUMPER
+BTN_BASE2 CONTROLLER_BUTTON_D
+BTN_TOP2 CONTROLLER_BUTTON_RIGHT_BUMPER
+BTN_BASE CONTROLLER_BUTTON_A
+
+# 2 Hand Pedals (left to right):
+# ---------------------------------------------------
+BTN_BASE6 CONTROLLER_BUTTON_LEFT_BUMPER
+BTN_BASE5 CONTROLLER_BUTTON_RIGHT_BUMPER
+
+# 2 bottom wheel face buttons
+# ---------------------------------------------------
+BTN_BASE3 CONTROLLER_BUTTON_COIN
+BTN_BASE4 CONTROLLER_BUTTON_START
+
+# 4 PlayStation icon buttons buttons at top right of wheel (clockwise):
+# ---------------------------------------------------
+BTN_TOP CONTROLLER_BUTTON_TEST
+BTN_THUMB2 CONTROLLER_BUTTON_SERVICE
+BTN_THUMB CONTROLLER_BUTTON_B
+BTN_TRIGGER CONTROLLER_BUTTON_C
+
+# D-PAD at top left of wheel:
+# ---------------------------------------------------
+ABS_HAT0X CONTROLLER_BUTTON_LEFT CONTROLLER_BUTTON_RIGHT
+ABS_HAT0Y CONTROLLER_BUTTON_UP CONTROLLER_BUTTON_DOWN
+
+# Unassigned Buttons:
+# ---------------------------------------------------
+# CONTROLLER_BUTTON_E
+# CONTROLLER_BUTTON_F
+# CONTROLLER_BUTTON_TILT
