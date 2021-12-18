@@ -6,7 +6,6 @@ User=root
 Type=simple
 Restart=always
 RestartSec=10
-StartLimitIntervalSec=0
 ExecStart=/usr/bin/openjvs
 
 [Install]
