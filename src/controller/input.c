@@ -280,13 +280,13 @@ void *deviceThread(void *_args)
                         }
                         continue;
                     }
-                    else if (event.value == args->inputs.absMin[event.code])
+                    else if (event.value >= (int)ceil((double)args->inputs.absMax[event.code] * 0.9))
                     {
-                        setSwitch(args->jvsIO, args->inputs.key[event.code].jvsPlayer, args->inputs.key[event.code].output, 0);
+                        setSwitch(args->jvsIO, args->inputs.key[event.code].jvsPlayer, args->inputs.key[event.code].output, 1);
                     }
                     else
                     {
-                        setSwitch(args->jvsIO, args->inputs.key[event.code].jvsPlayer, args->inputs.key[event.code].output, 1);
+                        setSwitch(args->jvsIO, args->inputs.key[event.code].jvsPlayer, args->inputs.key[event.code].output, 0);
                     }
                     continue;
                 }
