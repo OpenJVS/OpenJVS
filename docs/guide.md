@@ -46,22 +46,16 @@ When buying a USB to RS485 dongle be sure to buy one with an FTDI chip inside. T
 To install OpenJVS follow the instructions below to install the required packages and make the program.
 
 ```
-sudo apt install git cmake
+sudo apt install git cmake build-essential file
 git clone https://github.com/OpenJVS/OpenJVS
 cd OpenJVS
 make
-```
-
-To run locally (from inside the root directory):
-
-```
-sudo ./build/openjvs [optional outside mapping name]
-```
-
-To install globally and run (from inside the root directory):
-
-```
 make install
+```
+
+To run manually use the following:
+
+```
 sudo openjvs [optional outside mapping name]
 ```
 

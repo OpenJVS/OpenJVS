@@ -33,7 +33,7 @@ sudo make install
 
 ## Guides
 
-- [Software Guide (The old readme)](docs/guide.md) 
+- [Software Guide](docs/guide.md) 
 - [Hat Quickstart Guide](docs/hat-quickstart.md)
 
 
