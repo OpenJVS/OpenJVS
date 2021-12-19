@@ -152,7 +152,7 @@ int setRumble(double force)
 int initWheel(int fd)
 {
 
-    debug(0, "OpenJVS FFB Wheel LIB Loaded\n");
+    debug(1, "OpenJVS Wheel Init\n");
 
     /* Only setup FFB for the first wheel */
     if (device_handle != -1)
@@ -160,7 +160,6 @@ int initWheel(int fd)
 
     /* Update global device handle */
     device_handle = fd;
-    printf("dev hand %d\n", device_handle);
 
     /* Now get some information about force feedback */
     memset(ff_bits, 0, sizeof(ff_bits));
@@ -174,16 +173,14 @@ int initWheel(int fd)
     /* force feedback supported? */
     if (!testBit(FF_CONSTANT, ff_bits))
     {
-        fprintf(stderr, "ERROR: device (or driver) has no constant force feedback support [%s:%d]\n",
-                __FILE__, __LINE__);
+        debug(0, "This device does not support constant FFB\n");
         return 0;
     }
 
     /* force feedback supported? */
     if (!testBit(FF_PERIODIC, ff_bits))
     {
-        fprintf(stderr, "ERROR: device (or driver) has no rumble support [%s:%d]\n",
-                __FILE__, __LINE__);
+        debug(0, "This device does not support rumble FFB\n");
         return 0;
     }
 

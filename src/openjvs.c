@@ -182,13 +182,16 @@ int main(int argc, char **argv)
         debug(0, "\nYou are currently emulating a \033[0;31m%s\033[0m on %s.\n\n", io.capabilities.displayName, config.devicePath);
 
         /* Setup the FFB Emulator */
-        debug(1, "Init FFB");
-        int enableFFB = 1;
-        if (enableFFB)
+        if (config.ffbEnable)
         {
-            if (initFFB(&ffb, &io, FFB_EMULATION_TYPE_SEGA, "/dev/ttyUSB0") != FFB_STATUS_SUCCESS)
+            debug(1, "Init FFB on %s\n", config.ffbPath);
+            if (initFFB(&ffb, &io, FFB_EMULATION_TYPE_SEGA, config.ffbPath) != FFB_STATUS_SUCCESS)
             {
-                debug(0, "Warning: Could not initialise the FFB");
+                debug(0, "Warning: Could not initialise the FFB\n");
+            }
+            else
+            {
+                debug(0, "You are emulating FFB on %s\n", config.ffbPath);
             }
         }
 

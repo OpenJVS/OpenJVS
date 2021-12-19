@@ -2,6 +2,7 @@
 #include "console/debug.h"
 #include "hardware/device.h"
 #include "ffb/wheel.h"
+#include "jvs/jvs.h"
 
 void *ffbThread(void *_args);
 
@@ -11,7 +12,7 @@ void *ffbThread(void *_args);
 
 FFBStatus initFFB(FFBState *state, JVSIO *io, FFBEmulationType type, char *serialPath)
 {
-    debug(0, "Init ffb %s\n", serialPath);
+    debug(1, "Init FFB %s\n", serialPath);
     state->type = type;
     state->serial = -1;
     state->controller = -1;

@@ -26,7 +26,8 @@ typedef enum
 typedef enum
 {
     FFB_EMULATION_TYPE_SEGA,
-    FFB_EMULATION_TYPE_NAMCO
+    FFB_EMULATION_TYPE_NAMCO,
+    FFB_EMULATION_TYPE_SRC
 } FFBEmulationType;
 
 typedef struct
@@ -42,5 +43,6 @@ typedef struct
 FFBStatus initFFB(FFBState *state, JVSIO *io, FFBEmulationType type, char *serialPath);
 FFBStatus bindController(FFBState *state, int controller);
 FFBStatus closeFFB(FFBState *state);
+FFBStatus processSyncFFB(FFBState *state);
 
 #endif // FFB_H_

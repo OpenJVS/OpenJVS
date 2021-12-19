@@ -18,6 +18,9 @@ int initIO(JVSIO *io)
 	for (int player = 0; player < io->capabilities.coins; player++)
 		io->state.coinCount[player] = 0;
 
+	for (int channel = 0; channel < io->capabilities.generalPurposeOutputs; channel++)
+		io->state.generalPurposeOutputs[channel] = 0;
+
 	io->analogueMax = pow(2, io->capabilities.analogueInBits) - 1;
 	io->gunXMax = pow(2, io->capabilities.gunXBits) - 1;
 	io->gunYMax = pow(2, io->capabilities.gunYBits) - 1;
@@ -59,6 +62,12 @@ int setAnalogue(JVSIO *io, JVSInput channel, double value)
 	if (channel >= io->capabilities.analogueInChannels)
 		return 0;
 	io->state.analogueChannel[channel] = (int)((double)value * (double)io->analogueMax);
+	return 1;
+}
+
+int setGeneralPurposeOutputByte(JVSIO *io, int channel, unsigned char value)
+{
+	io->state.generalPurposeOutputs[channel] = value;
 	return 1;
 }
 

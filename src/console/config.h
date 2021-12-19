@@ -16,6 +16,8 @@
 #define DEFAULT_SENSE_LINE_PIN 12
 #define DEFAULT_SENSE_LINE_TYPE 0
 #define DEFAULT_AUTO_CONTROLLER_DETECTION 1
+#define DEFAULT_FFB_ENABLE 0
+#define DEFAULT_FFB_PATH "/dev/ttyUSB1"
 
 #define MAX_PATH_LENGTH 1024
 #define MAX_LINE_LENGTH 1024
@@ -29,6 +31,8 @@ typedef struct
     int debugLevel;
     char capabilitiesPath[MAX_PATH_LENGTH];
     int autoControllerDetection;
+    int ffbEnable;
+    char ffbPath[MAX_PATH_LENGTH];
 } JVSConfig;
 
 typedef enum

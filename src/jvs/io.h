@@ -139,6 +139,7 @@ typedef struct
     int analogueChannel[JVS_MAX_STATE_SIZE];
     int gunChannel[JVS_MAX_STATE_SIZE];
     int rotaryChannel[JVS_MAX_STATE_SIZE];
+    unsigned char generalPurposeOutputs[JVS_MAX_STATE_SIZE];
 } JVSState;
 
 typedef struct
@@ -193,6 +194,7 @@ int incrementCoin(JVSIO *io, JVSPlayer player, int amount);
 int setAnalogue(JVSIO *io, JVSInput channel, double value);
 int setGun(JVSIO *io, JVSInput channel, double value);
 int setRotary(JVSIO *io, JVSInput channel, int value);
+int setGeneralPurposeOutputByte(JVSIO *io, int channel, unsigned char value);
 
 JVSInput jvsInputFromString(char *jvsInputString);
 JVSPlayer jvsPlayerFromString(char *jvsPlayerString);

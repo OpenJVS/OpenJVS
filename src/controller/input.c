@@ -466,7 +466,7 @@ int processMappings(InputMappings *inputMappings, OutputMappings *outputMappings
         if (inputMappings->mappings[i].type == CARD)
         {
             evInputs->key[inputMappings->mappings[i].code] = tempMapping;
-            evInputs->abs[inputMappings->mappings[i].code].type = COIN;
+            evInputs->abs[inputMappings->mappings[i].code].type = CARD;
             evInputs->absEnabled[inputMappings->mappings[i].code] = 1;
         }
     }

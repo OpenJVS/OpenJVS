@@ -359,6 +359,8 @@ JVSStatus processPacket(JVSIO *jvsIO)
 		{
 			debug(1, "CMD_WRITE_GPO\n");
 			size = 2 + inputPacket.data[index + 1];
+			for (int i = 0; i < inputPacket.data[index + 1]; i++)
+				setGeneralPurposeOutputByte(jvsIO, i, inputPacket.data[index + 2 + i]);
 			outputPacket.data[outputPacket.length] = REPORT_SUCCESS;
 			outputPacket.length += 1;
 		}
@@ -368,6 +370,7 @@ JVSStatus processPacket(JVSIO *jvsIO)
 		{
 			debug(1, "CMD_WRITE_GPO_BYTE\n");
 			size = 3;
+			setGeneralPurposeOutputByte(jvsIO, inputPacket.data[index + 1], inputPacket.data[index + 2]);
 			outputPacket.data[outputPacket.length++] = REPORT_SUCCESS;
 		}
 		break;
