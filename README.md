@@ -31,6 +31,9 @@ make
 sudo make install
 ```
 
+## Manual for OpenJVS and OpenJVS IO is included in "/docs"
+https://github.com/OpenJVS/OpenJVS/tree/master/docs/OpenJVS_IO_Manual_1.2.pdf
+
 ## Guides
 
 - [Software Guide (The old readme)](docs/guide.md) 
