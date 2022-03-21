@@ -688,11 +688,6 @@ static JVSInputStatus initInputsAimtrak(int *playerNumber, DeviceList *deviceLis
         if (parseInputMapping(deviceList->devices[i].name, &inputMappings) != JVS_CONFIG_STATUS_SUCCESS || inputMappings.length == 0)
             continue;
 
-        //Increment Player number only when second occurence of first Aimtrak device is detected (i.e. ultimarc_iltimarc_joystick)
-        //goal is to map the 3 input devices on same output (player)
-        if ((strcmp(FirstDetectedAimtrak, deviceList->devices[i].name) == 0))
-            (*playerNumber)++;
-
         EVInputs evInputs = {0};
         if (!processMappings(&inputMappings, outputMappings, &evInputs, (ControllerPlayer)*playerNumber))
         {
@@ -712,9 +707,10 @@ static JVSInputStatus initInputsAimtrak(int *playerNumber, DeviceList *deviceLis
         else
         {
             debug(0, "            %s  (mapped as CONTROLLER_%d in output)\n", deviceList->devices[i].name, *playerNumber);
+	    (*playerNumber)++;
+            cpRealAimtrakPlayer++;
         }
 
-        cpRealAimtrakPlayer++;
     }
 
     return JVS_INPUT_STATUS_SUCCESS;
@@ -753,9 +749,9 @@ JVSInputStatus initInputs(char *outputMappingPath, char *configPath, JVSIO *jvsI
     {
         int playerNumber = 1;
 
-        initInputsNormalMapped(&playerNumber, deviceList, &outputMappings, jvsIO, autoDetect);
-        initInputsWiimote(&playerNumber, deviceList, &outputMappings, jvsIO);
         initInputsAimtrak(&playerNumber, deviceList, &outputMappings, jvsIO);
+        initInputsWiimote(&playerNumber, deviceList, &outputMappings, jvsIO);
+        initInputsNormalMapped(&playerNumber, deviceList, &outputMappings, jvsIO, autoDetect);
     }
 
     if (deviceList != NULL)
