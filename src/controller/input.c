@@ -560,6 +560,27 @@ static JVSInputStatus initInputsWiimote(int *playerNumber, DeviceList *deviceLis
         if (strstr(deviceList->devices[i].name, WIIMOTE_DEVICE_NAME) == NULL)
             continue;
 
+	if(strcmp(deviceList->devices[i].name, WIIMOTE_DEVICE_NAME_NUNCHUCK) == 0) {
+		
+            InputMappings inputMappings = {0};
+            if (parseInputMapping(deviceList->devices[i].name, &inputMappings) != JVS_CONFIG_STATUS_SUCCESS || inputMappings.length == 0)
+            {
+                debug(0, "Error: Could not parse input mapping for %s\n", deviceList->devices[i].name);
+                continue;
+            }
+
+            EVInputs evInputs = {0};
+            if (!processMappings(&inputMappings, outputMappings, &evInputs, (ControllerPlayer)*playerNumber))
+            {
+                debug(0, "Error: Failed to process the mapping for %s\n", deviceList->devices[i].name);
+                continue;
+            }
+
+            startThread(&evInputs, deviceList->devices[i].path, 0, *playerNumber, jvsIO);
+
+            debug(0, "  Player %d:\t\t%s\n", *playerNumber, deviceList->devices[i].fullName);
+	}
+
         if (strcmp(deviceList->devices[i].name, WIIMOTE_DEVICE_NAME_IR) == 0)
             infraredDevice = i;
 

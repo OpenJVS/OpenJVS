@@ -7,6 +7,7 @@
 
 #define WIIMOTE_DEVICE_NAME "nintendo-wii-remote"
 #define WIIMOTE_DEVICE_NAME_IR "nintendo-wii-remote-ir"
+#define WIIMOTE_DEVICE_NAME_NUNCHUCK "nintendo-wii-remote-nunchuk"
 
 #define AIMTRAK_DEVICE_NAME "ultimarc-ultimarc"
 #define AIMTRAK_DEVICE_NAME_REMAP_JOYSTICK "ultimarc-ultimarc-joystick"
