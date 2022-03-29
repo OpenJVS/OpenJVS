@@ -44,6 +44,7 @@ typedef struct
 
 void *wiiDeviceThread(void *_args)
 {
+
     MappingThreadArguments *args = (MappingThreadArguments *)_args;
 
     int fd = open(args->devicePath, O_RDONLY);
@@ -177,7 +178,6 @@ void *deviceThread(void *_args)
     int flags = fcntl(fd, F_GETFL, 0);
     fcntl(fd, F_SETFL, flags | O_NONBLOCK);
 
-    int axisIndex;
     uint8_t absoluteBitmask[ABS_MAX / 8 + 1];
     struct input_absinfo absoluteFeatures;
 
@@ -187,14 +187,15 @@ void *deviceThread(void *_args)
         perror("evdev ioctl");
     }
 
-    for (axisIndex = 0; axisIndex < ABS_MAX; ++axisIndex)
+    for (int axisIndex = 0; axisIndex < ABS_MAX; ++axisIndex)
     {
         if (test_bit(axisIndex, absoluteBitmask))
         {
             if (ioctl(fd, EVIOCGABS(axisIndex), &absoluteFeatures))
             {
-                perror("evdev EVIOCGABS ioctl");
+                perror("IOCTL Error");
             }
+
             args->inputs.absMax[axisIndex] = (double)absoluteFeatures.maximum;
             args->inputs.absMin[axisIndex] = (double)absoluteFeatures.minimum;
         }
@@ -205,6 +206,7 @@ void *deviceThread(void *_args)
 
     while (getThreadsRunning())
     {
+
         FD_ZERO(&file_descriptor);
         FD_SET(fd, &file_descriptor);
 
@@ -469,8 +471,15 @@ int isEventDevice(const struct dirent *dir)
     return strncmp("event", dir->d_name, 5) == 0;
 }
 
+int getNumberOfDevices()
+{
+    struct dirent **namelist;
+    return scandir(DEV_INPUT_EVENT, &namelist, isEventDevice, NULL);
+}
+
 int getInputs(DeviceList *deviceList)
 {
+    memset(deviceList, 0, sizeof(DeviceList));
     struct dirent **namelist;
 
     deviceList->length = scandir(DEV_INPUT_EVENT, &namelist, isEventDevice, alphasort);
@@ -506,13 +515,13 @@ int getInputs(DeviceList *deviceList)
         ioctl(device, EVIOCGNAME(sizeof(deviceList->devices[i].fullName)), deviceList->devices[i].fullName);
 
         // Get the physical location string
-        memset(deviceList->devices[i].phyiscalLocation, 0, 1);
-        ioctl(device, EVIOCGPHYS(sizeof(deviceList->devices[i].phyiscalLocation)), deviceList->devices[i].phyiscalLocation);
-        for (size_t j = 0; j < strlen(deviceList->devices[i].phyiscalLocation); j++)
+        memset(deviceList->devices[i].physicalLocation, 0, 1);
+        ioctl(device, EVIOCGPHYS(sizeof(deviceList->devices[i].physicalLocation)), deviceList->devices[i].physicalLocation);
+        for (size_t j = 0; j < strlen(deviceList->devices[i].physicalLocation); j++)
         {
-            if (deviceList->devices[i].phyiscalLocation[j] == '/')
+            if (deviceList->devices[i].physicalLocation[j] == '/')
             {
-                deviceList->devices[i].phyiscalLocation[j] = 0;
+                deviceList->devices[i].physicalLocation[j] = 0;
                 break;
             }
         }
@@ -568,18 +577,32 @@ int getInputs(DeviceList *deviceList)
 
     free(namelist);
 
-    // Now we can bubble sort the device list
+    // Now we can bubble sort the device list by name and then physical location
 
-    Device tmp;
-    for (int i = 0; i < deviceList->length; i++)
+    for (int i = 0; i < deviceList->length - 1; i++)
     {
-        for (int j = 0; j < deviceList->length; j++)
+        for (int j = 0; j < deviceList->length - 1 - i; j++)
         {
-            if (strcmp(deviceList->devices[i].phyiscalLocation, deviceList->devices[j].phyiscalLocation) < 0)
+            Device tmp;
+            if (strcmp(deviceList->devices[j].name, deviceList->devices[j + 1].name) > 0)
             {
-                tmp = deviceList->devices[i];
-                deviceList->devices[i] = deviceList->devices[j];
-                deviceList->devices[j] = tmp;
+                tmp = deviceList->devices[j];
+                deviceList->devices[j] = deviceList->devices[j + 1];
+                deviceList->devices[j + 1] = tmp;
+            }
+        }
+    }
+
+    for (int i = 0; i < deviceList->length - 1; i++)
+    {
+        for (int j = 0; j < deviceList->length - 1 - i; j++)
+        {
+            Device tmp;
+            if (strcmp(deviceList->devices[j].physicalLocation, deviceList->devices[j + 1].physicalLocation) > 0)
+            {
+                tmp = deviceList->devices[j];
+                deviceList->devices[j] = deviceList->devices[j + 1];
+                deviceList->devices[j + 1] = tmp;
             }
         }
     }
@@ -587,85 +610,39 @@ int getInputs(DeviceList *deviceList)
     return 1;
 }
 
-static JVSInputStatus initInputsWiimote(int *playerNumber, DeviceList *deviceList, OutputMappings *outputMappings, JVSIO *jvsIO)
+/**
+ * Initialise all of the input devices and start the threads
+ * 
+ * This function initialises all the input devices that have mappings and
+ * starts all of the appropriate threads.
+ * 
+ * @param outputMappingPath The path of the game mapping file
+ * @param configPath The path to the configuration file
+ * @param jvsIO The JVS IO object that we will send inputs to
+ * @param autoDetect If we should automatically map controllers without mappings
+ * @returns The status of the operation
+ **/
+JVSInputStatus initInputs(char *outputMappingPath, char *configPath, JVSIO *jvsIO, int autoDetect)
 {
-    int infraredDevice = -1;
-    int controlDevice = -1;
+    JVSInputStatus retval = JVS_INPUT_STATUS_SUCCESS;
+    OutputMappings outputMappings = {0};
+
+    DeviceList *deviceList = (DeviceList *)malloc(sizeof(DeviceList));
+
+    if (deviceList == NULL)
+        return JVS_INPUT_STATUS_MALLOC_ERROR;
+
+    if (!getInputs(deviceList))
+        return JVS_INPUT_STATUS_DEVICE_OPEN_ERROR;
+
+    if (parseOutputMapping(outputMappingPath, &outputMappings, configPath) != JVS_CONFIG_STATUS_SUCCESS)
+        return JVS_INPUT_STATUS_OUTPUT_MAPPING_ERROR;
+
+    int playerNumber = 1;
 
     for (int i = 0; i < deviceList->length; i++)
     {
-        if (strstr(deviceList->devices[i].name, WIIMOTE_DEVICE_NAME) == NULL)
-            continue;
-
-        if (strcmp(deviceList->devices[i].name, WIIMOTE_DEVICE_NAME_NUNCHUCK) == 0)
-        {
-
-            InputMappings inputMappings = {0};
-            if (parseInputMapping(deviceList->devices[i].name, &inputMappings) != JVS_CONFIG_STATUS_SUCCESS || inputMappings.length == 0)
-            {
-                debug(0, "Error: Could not parse input mapping for %s\n", deviceList->devices[i].name);
-                continue;
-            }
-
-            EVInputs evInputs = {0};
-            if (!processMappings(&inputMappings, outputMappings, &evInputs, (ControllerPlayer)*playerNumber))
-            {
-                debug(0, "Error: Failed to process the mapping for %s\n", deviceList->devices[i].name);
-                continue;
-            }
-
-            startThread(&evInputs, deviceList->devices[i].path, 0, *playerNumber, jvsIO);
-
-            debug(0, "  Player %d:\t\t%s\n", *playerNumber, deviceList->devices[i].fullName);
-        }
-
-        if (strcmp(deviceList->devices[i].name, WIIMOTE_DEVICE_NAME_IR) == 0)
-            infraredDevice = i;
-
-        if (strcmp(deviceList->devices[i].name, WIIMOTE_DEVICE_NAME) == 0)
-            controlDevice = i;
-
-        if ((infraredDevice != -1) && (controlDevice != -1))
-        {
-            InputMappings inputMappings = {0};
-            if (parseInputMapping(deviceList->devices[controlDevice].name, &inputMappings) != JVS_CONFIG_STATUS_SUCCESS || inputMappings.length == 0)
-            {
-                debug(0, "Error: Could not parse input mapping for Nintendo Wii Remote!\n");
-                infraredDevice = controlDevice = -1;
-                continue;
-            }
-
-            EVInputs evInputs = {0};
-            if (!processMappings(&inputMappings, outputMappings, &evInputs, (ControllerPlayer)*playerNumber))
-            {
-                debug(0, "Error: Failed to process the mapping for %s\n", deviceList->devices[controlDevice].name);
-                infraredDevice = controlDevice = -1;
-                continue;
-            }
-
-            startThread(&evInputs, deviceList->devices[infraredDevice].path, 1, *playerNumber, jvsIO);
-            startThread(&evInputs, deviceList->devices[controlDevice].path, 0, *playerNumber, jvsIO);
-
-            debug(0, "  Player %d:\t\t%s\n", *playerNumber, deviceList->devices[i].fullName);
-
-            (*playerNumber)++;
-
-            infraredDevice = controlDevice = -1;
-        }
-    }
-
-    return JVS_INPUT_STATUS_SUCCESS;
-}
-
-static JVSInputStatus initInputsNormalMapped(int *playerNumber, DeviceList *deviceList, OutputMappings *outputMappings, JVSIO *jvsIO, int autoDetect)
-{
-    for (int i = 0; i < deviceList->length; i++)
-    {
-        if (strstr(deviceList->devices[i].name, WIIMOTE_DEVICE_NAME) != NULL)
-            continue;
-
-        if (strstr(deviceList->devices[i].name, AIMTRAK_DEVICE_NAME) != NULL)
-            continue;
+        Device *device = &deviceList->devices[i];
 
         char disabledPath[MAX_PATH_LENGTH];
         strcpy(disabledPath, DEFAULT_DEVICE_MAPPING_PATH);
@@ -681,7 +658,22 @@ static JVSInputStatus initInputsNormalMapped(int *playerNumber, DeviceList *devi
         /* Attempt to do a generic map */
         char specialMap[256] = "";
         InputMappings inputMappings = {0};
-        if (parseInputMapping(deviceList->devices[i].name, &inputMappings) != JVS_CONFIG_STATUS_SUCCESS || inputMappings.length == 0)
+        char deviceName[MAX_PATH_LENGTH];
+        strcpy(deviceName, device->name);
+
+        // Use the standard nintendo-wii-remote mapping file for the IR Version too
+        if (strcmp(deviceName, WIIMOTE_DEVICE_NAME_IR) == 0)
+        {
+            strcpy(deviceName, WIIMOTE_DEVICE_NAME);
+        }
+
+        // Use the standard ultimarc-aimtrak mapping file for both screen events
+        if (strcmp(deviceName, AIMTRAK_DEVICE_NAME_REMAP_JOYSTICK) == 0 || strcmp(deviceName, AIMTRAK_DEVICE_NAME_REMAP_OUT_SCREEN) == 0 || strcmp(deviceName, AIMTRAK_DEVICE_NAME_REMAP_IN_SCREEN) == 0)
+        {
+            strcpy(deviceName, AIMTRAK_DEVICE_MAPPING_NAME);
+        }
+
+        if (parseInputMapping(deviceName, &inputMappings) != JVS_CONFIG_STATUS_SUCCESS || inputMappings.length == 0)
         {
             if (autoDetect)
             {
@@ -704,7 +696,7 @@ static JVSInputStatus initInputsNormalMapped(int *playerNumber, DeviceList *devi
         }
 
         EVInputs evInputs = {0};
-        if (!processMappings(&inputMappings, outputMappings, &evInputs, (ControllerPlayer)*playerNumber))
+        if (!processMappings(&inputMappings, &outputMappings, &evInputs, (ControllerPlayer)playerNumber))
         {
             debug(0, "Error: Failed to process the mapping for %s\n", deviceList->devices[i].name);
             continue;
@@ -712,119 +704,22 @@ static JVSInputStatus initInputsNormalMapped(int *playerNumber, DeviceList *devi
 
         if (inputMappings.player != -1)
         {
-            startThread(&evInputs, deviceList->devices[i].path, 0, inputMappings.player, jvsIO);
+            startThread(&evInputs, device->path, strcmp(device->name, WIIMOTE_DEVICE_NAME_IR), inputMappings.player, jvsIO);
             debug(0, "  Player %d (Fixed via config):\t\t%s%s\n", inputMappings.player, deviceList->devices[i].name, specialMap);
         }
         else
         {
-            startThread(&evInputs, deviceList->devices[i].path, 0, *playerNumber, jvsIO);
-            debug(0, "  Player %d:\t\t%s%s\n", *playerNumber, deviceList->devices[i].name, specialMap);
-            (*playerNumber)++;
+            startThread(&evInputs, device->path, strcmp(device->name, WIIMOTE_DEVICE_NAME_IR) == 0, playerNumber, jvsIO);
+            if (strcmp(deviceList->devices[i].name, AIMTRAK_DEVICE_NAME_REMAP_IN_SCREEN) != 0 && strcmp(deviceList->devices[i].name, AIMTRAK_DEVICE_NAME_REMAP_JOYSTICK) != 0 && strcmp(deviceList->devices[i].name, WIIMOTE_DEVICE_NAME) != 0)
+            {
+                debug(0, "  Player %d:\t\t%s%s\n", playerNumber, deviceName, specialMap);
+                playerNumber++;
+            }
         }
     }
 
-    return JVS_INPUT_STATUS_SUCCESS;
-}
-
-/* AIMTRAK SUPPORT:
-   AIMTRAK input device is detected as 3 seperate devices
-   The first device is mostprobably a joystick emulation (should return events only when gun configured accordingly, but I never saw something?)
-   The second device returns events when the gun is "out of screen' (buttons and trigger when the gun is out of screen)
-   The third device returns events when the gun is 'in screen' (x & y position, buttons and trigger)
-   Because of that, openJVS will read 3 device maps for supporting this Aimtrak. Here are the logical device map names assigned by openjvs:
-        - /etc/openjvs/devices/ultimarc-ultimarc-joystick -> this map may just not exist or be disabled, not used
-        - /etc/openjvs/devices/ultimarc-ultimarc-screen-out
-        - /etc/openjvs/devices/ultimarc-ultimarc-screen-in
-    -> !!! 1 Aimtrak Gun is thus detected as 3 devices but for it must be mapped for 1 player
-*/
-static JVSInputStatus initInputsAimtrak(int *playerNumber, DeviceList *deviceList, OutputMappings *outputMappings, JVSIO *jvsIO)
-{
-
-    int cpRealAimtrakPlayer = *playerNumber;
-    char FirstDetectedAimtrak[128];
-    FirstDetectedAimtrak[0] = '\0';
-
-    for (int i = 0; i < deviceList->length; i++)
-    {
-        // Filter on Aimtrack device name
-        if (strstr(deviceList->devices[i].name, AIMTRAK_DEVICE_NAME) == NULL)
-            continue;
-
-        // Parse input device file, if not ok, continue with next device
-        InputMappings inputMappings = {0};
-        if (parseInputMapping(deviceList->devices[i].name, &inputMappings) != JVS_CONFIG_STATUS_SUCCESS || inputMappings.length == 0)
-            continue;
-
-        EVInputs evInputs = {0};
-        if (!processMappings(&inputMappings, outputMappings, &evInputs, (ControllerPlayer)*playerNumber))
-        {
-            debug(0, "Error: Failed to process the mapping %s\n", deviceList->devices[i].name);
-            cpRealAimtrakPlayer++;
-            continue;
-        }
-
-        startThread(&evInputs, deviceList->devices[i].path, 0, *playerNumber, jvsIO);
-
-        // In case someone has connected 2 Aimtrak for instance, we never know :)
-        if (FirstDetectedAimtrak[0] == '\0' || (strcmp(FirstDetectedAimtrak, deviceList->devices[i].name) == 0))
-        {
-            debug(0, "  Player %d: %s (mapped as CONTROLLER_%d in output)\n", cpRealAimtrakPlayer, deviceList->devices[i].name, *playerNumber);
-            strcpy(FirstDetectedAimtrak, deviceList->devices[i].name);
-        }
-        else
-        {
-            debug(0, "            %s  (mapped as CONTROLLER_%d in output)\n", deviceList->devices[i].name, *playerNumber);
-            (*playerNumber)++;
-            cpRealAimtrakPlayer++;
-        }
-    }
-
-    return JVS_INPUT_STATUS_SUCCESS;
-}
-
-JVSInputStatus initInputs(char *outputMappingPath, char *configPath, JVSIO *jvsIO, int autoDetect)
-{
-    JVSInputStatus retval = JVS_INPUT_STATUS_SUCCESS;
-    DeviceList *deviceList = NULL;
-    OutputMappings outputMappings = {0};
-
-    deviceList = malloc(sizeof(DeviceList));
-
-    if (deviceList == NULL)
-    {
-        retval = JVS_INPUT_STATUS_MALLOC_ERROR;
-    }
-
-    if (retval == JVS_INPUT_STATUS_SUCCESS)
-    {
-        if (!getInputs(deviceList))
-        {
-            retval = JVS_INPUT_STATUS_DEVICE_OPEN_ERROR;
-        }
-    }
-
-    if (retval == JVS_INPUT_STATUS_SUCCESS)
-    {
-        if (parseOutputMapping(outputMappingPath, &outputMappings, configPath) != JVS_CONFIG_STATUS_SUCCESS)
-        {
-            retval = JVS_INPUT_STATUS_OUTPUT_MAPPING_ERROR;
-        }
-    }
-
-    if (retval == JVS_INPUT_STATUS_SUCCESS)
-    {
-        int playerNumber = 1;
-
-        initInputsAimtrak(&playerNumber, deviceList, &outputMappings, jvsIO);
-        initInputsWiimote(&playerNumber, deviceList, &outputMappings, jvsIO);
-        initInputsNormalMapped(&playerNumber, deviceList, &outputMappings, jvsIO, autoDetect);
-    }
-
-    if (deviceList != NULL)
-    {
-        free(deviceList);
-        deviceList = NULL;
-    }
+    free(deviceList);
+    deviceList = NULL;
 
     return retval;
 }

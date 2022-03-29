@@ -1,0 +1,27 @@
+# Ultimarc Aimtrack Mapping by Fred and bobbydilley
+
+# Left button in Screen
+BTN_TRIGGER CONTROLLER_BUTTON_B
+
+# Trigger in Screen
+BTN_LEFT CONTROLLER_BUTTON_A
+
+# Right button in Screen
+BTN_THUMB CONTROLLER_BUTTON_C
+
+# Left button out of screen
+BTN_THUMB2 CONTROLLER_BUTTON_COIN
+
+# Trigger out of screen
+BTN_RIGHT CONTROLLER_BUTTON_A
+
+# Right button out of screen
+BTN_TOP CONTROLLER_BUTTON_START
+
+# Pointer Position
+ABS_X CONTROLLER_ANALOGUE_X
+ABS_Y CONTROLLER_ANALOGUE_Y
+
+
+
+

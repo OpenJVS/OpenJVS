@@ -37,10 +37,7 @@ void *watchdogThread(void *_args)
     if (error == 0)
     {
         int originalDevicesCount = 0;
-        if (getInputs(deviceList))
-        {
-            originalDevicesCount = deviceList->length;
-        }
+        originalDevicesCount = getNumberOfDevices();
 
         int rotaryValue = -1;
 

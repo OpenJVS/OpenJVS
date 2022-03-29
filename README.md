@@ -25,18 +25,16 @@ Questions can be asked in the discord channel: https://arcade.community. If it a
 Installation is done from the git repository as follows:
 
 ```
-sudo apt install build-essential cmake git
+sudo apt install build-essential cmake git file
 git clone https://github.com/openjvs/openjvs
 make
 sudo make install
 ```
 
-## Manual for OpenJVS and OpenJVS IO is included in "/docs"
-https://github.com/OpenJVS/OpenJVS/tree/master/docs/OpenJVS_IO_Manual_1.2.pdf
-
 ## Guides
 
-- [Software Guide (The old readme)](docs/guide.md) 
+- [Manual & Detailed Hat Guide](docs/OpenJVS_IO_Manual_1.2.pdf)
+- [Software Guide](docs/guide.md) 
 - [Hat Quickstart Guide](docs/hat-quickstart.md)
 
 

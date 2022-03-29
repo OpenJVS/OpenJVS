@@ -96,6 +96,26 @@ If you'd like to stop the automatic detection, you can do this in the config fil
 
 Each new device is seen as a new player. For example if you plug 2 playstation controllers in, they will be mapped to PLAYER 1 and PLAYER 2. This means you should disable controllers you don't want to use, as they will take up player space.
 
+## AimTrak
+
+The aimtrak support was added by fred and bobbydilley. Aimtraks should be plug and play, remember the calibrate the gametrak via the guns calibration setting before calibrating the actual game via the game test menu. The aimtrak must be setup in the following way:
+
+Please select 'Emulate mouse'.
+
+### On Screen
+
+- TRIG  -> Mouse Left
+- LEFT  -> GP Button 1
+- RIGHT -> GP Button 2
+
+### Off Screen
+
+- TRIG  -> Mouse Right
+- LEFT  -> GP Button 3
+- RIGHT -> GP Button 4
+
+I also suggest to enable cal on Off Screen RIGHT only. This way you won't accidently put the gun into calibration mode when playing. Any other settings are up to the user.
+
 ## OpenJVS HAT
 
 To support the new OpenJVS Hat some new features have been added
@@ -150,6 +170,14 @@ ABS_HAT0X CONTROLLER_BUTTON_LEFT CONTROLLER_BUTTON_RIGHT
 ```
 
 As above you can map the HAT controls which are sometimes used for DPADS. This should take controller button outputs on a single line. This can map any analogue channel into a digital one so analogue hats as well as thumb sticks can be converted into digitals!
+
+You can also use this file to fix the player mapping of a certain controller using the `PLAYER` modifier, an example is below:
+
+```
+PLAYER 2
+```
+
+This would mean that any devices with that name will be assigned to PLAYER 2, and the standard player orders will not be effected by this device.
 
 FROM keywords are selected from the list of linux input event keywords. These are the same as the ones shown when you run `sudo evtest`. TO keywords are selected from the pre defined virtual controller mapping keywords list. Below is the virtual controller that the mapping is based upon, along with the mapping keywords used to reference this controller.
 

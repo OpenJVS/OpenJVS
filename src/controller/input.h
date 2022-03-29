@@ -13,6 +13,7 @@
 #define AIMTRAK_DEVICE_NAME_REMAP_JOYSTICK "ultimarc-ultimarc-joystick"
 #define AIMTRAK_DEVICE_NAME_REMAP_OUT_SCREEN "ultimarc-ultimarc-screen-out"
 #define AIMTRAK_DEVICE_NAME_REMAP_IN_SCREEN "ultimarc-ultimarc-screen-in"
+#define AIMTRAK_DEVICE_MAPPING_NAME "ultimarc-aimtrak"
 
 #define MAX_MAPPING 1024
 #define MAX_PATH 1024
@@ -33,7 +34,7 @@ typedef struct
     char fullName[MAX_PATH];
     char name[MAX_PATH];
     char path[MAX_PATH];
-    char phyiscalLocation[MAX_PATH];
+    char physicalLocation[MAX_PATH];
     int bus;
     int productID;
     int vendorID;
@@ -2402,5 +2403,6 @@ int evDevFromString(char *evDevString);
 int getInputs(DeviceList *deviceList);
 ControllerInput controllerInputFromString(char *controllerInputString);
 ControllerPlayer controllerPlayerFromString(char *controllerPlayerString);
+int getNumberOfDevices();
 
 #endif // INPUT_H_

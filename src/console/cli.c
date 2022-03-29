@@ -52,14 +52,14 @@ JVSCLIStatus printVersion()
  **/
 JVSCLIStatus editFile(char *filePath)
 {
-    char main[1024];
-    strcpy(main, DEFAULT_DEVICE_MAPPING_PATH);
-    strcat(main, filePath);
-    if (access(main, F_OK) != 0)
+    char mainName[1024];
+    strcpy(mainName, DEFAULT_DEVICE_MAPPING_PATH);
+    strcat(mainName, filePath);
+    if (access(mainName, F_OK) != 0)
     {
-        strcpy(main, DEFAULT_GAME_MAPPING_PATH);
-        strcat(main, filePath);
-        if (access(main, F_OK) != 0)
+        strcpy(mainName, DEFAULT_GAME_MAPPING_PATH);
+        strcat(mainName, filePath);
+        if (access(mainName, F_OK) != 0)
         {
             printf("Error: Could not find a game or device file with that name\n");
             return JVS_CLI_STATUS_ERROR;
@@ -68,7 +68,7 @@ JVSCLIStatus editFile(char *filePath)
 
     char command[1024];
     strcpy(command, "sudo editor ");
-    strcat(command, main);
+    strcat(command, mainName);
     system(command);
     return JVS_CLI_STATUS_SUCCESS_CLOSE;
 }
@@ -194,7 +194,7 @@ JVSCLIStatus disableDevice(char *deviceName)
 
 JVSCLIStatus printDeviceListing(Device *device)
 {
-    printf("  - %s (Physical Location: %s)\n", device->name, device->phyiscalLocation);
+    printf("  - %s (%s)\n", device->name, device->physicalLocation);
 
     return JVS_CLI_STATUS_SUCCESS_CONTINUE;
 }
