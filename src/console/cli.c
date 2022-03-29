@@ -20,6 +20,7 @@ JVSCLIStatus printUsage()
     debug(0, "Usage: openjvs ( options [controller] | [game] )\n\n");
     debug(0, "Options:\n");
     debug(0, "  --list     Lists all controllers\n");
+    debug(0, "  --edit     Opens a file for editing\n");
     debug(0, "  --enable   Enables a new/all controller(s)\n");
     debug(0, "  --disable  Disables a new/all controller(s)\n");
     debug(0, "  --help     Displays this text\n");
@@ -39,6 +40,36 @@ JVSCLIStatus printUsage()
 JVSCLIStatus printVersion()
 {
     debug(0, "%s\n", PROJECT_VER);
+    return JVS_CLI_STATUS_SUCCESS_CLOSE;
+}
+
+/**
+ * Edit a file in vim
+ * 
+ * Edits a file in the vim editor
+ *
+ * @returns The status of the action performed
+ **/
+JVSCLIStatus editFile(char *filePath)
+{
+    char main[1024];
+    strcpy(main, DEFAULT_DEVICE_MAPPING_PATH);
+    strcat(main, filePath);
+    if (access(main, F_OK) != 0)
+    {
+        strcpy(main, DEFAULT_GAME_MAPPING_PATH);
+        strcat(main, filePath);
+        if (access(main, F_OK) != 0)
+        {
+            printf("Error: Could not find a game or device file with that name\n");
+            return JVS_CLI_STATUS_ERROR;
+        }
+    }
+
+    char command[1024];
+    strcpy(command, "sudo editor ");
+    strcat(command, main);
+    system(command);
     return JVS_CLI_STATUS_SUCCESS_CLOSE;
 }
 
@@ -161,6 +192,12 @@ JVSCLIStatus disableDevice(char *deviceName)
     return JVS_CLI_STATUS_SUCCESS_CLOSE;
 }
 
+JVSCLIStatus printDeviceListing(Device *device)
+{
+    printf("  - %s (Physical Location: %s)\n", device->name, device->phyiscalLocation);
+
+    return JVS_CLI_STATUS_SUCCESS_CONTINUE;
+}
 /**
  * Prints the listing of devices
  * 
@@ -202,7 +239,7 @@ JVSCLIStatus printListing()
             int enabled = parseInputMapping(deviceList->devices[i].name, &inputMappings) == JVS_CONFIG_STATUS_SUCCESS;
             if (enabled)
             {
-                printf("  - %s\n", deviceList->devices[i].name);
+                printDeviceListing(&deviceList->devices[i]);
             }
         }
         debug(0, "\nDisabled:\n");
@@ -214,7 +251,7 @@ JVSCLIStatus printListing()
             int disabled = parseInputMapping(disabledString, &inputMappings) == JVS_CONFIG_STATUS_SUCCESS;
             if (disabled)
             {
-                printf("  - %s\n", deviceList->devices[i].name);
+                printDeviceListing(&deviceList->devices[i]);
             }
         }
         debug(0, "\nNo Mapping Present:\n");
@@ -227,7 +264,7 @@ JVSCLIStatus printListing()
             int disabled = parseInputMapping(disabledString, &inputMappings) == JVS_CONFIG_STATUS_SUCCESS;
             if (!enabled && !disabled)
             {
-                printf("  - %s\n", deviceList->devices[i].name);
+                printDeviceListing(&deviceList->devices[i]);
             }
         }
     }
@@ -290,6 +327,10 @@ JVSCLIStatus parseArguments(int argc, char **argv, char *map)
     {
         initDebug(1);
         return JVS_CLI_STATUS_SUCCESS_CONTINUE;
+    }
+    else if (strcmp(argv[1], "--edit") == 0)
+    {
+        return editFile(argv[2]);
     }
 
     // If none of these where found, the argument is unknown.

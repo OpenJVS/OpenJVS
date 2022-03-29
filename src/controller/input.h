@@ -30,9 +30,14 @@ typedef enum
 typedef struct
 {
     DeviceType type;
+    char fullName[MAX_PATH];
     char name[MAX_PATH];
     char path[MAX_PATH];
-    char fullName[MAX_PATH];
+    char phyiscalLocation[MAX_PATH];
+    int bus;
+    int productID;
+    int vendorID;
+    int version;
 } Device;
 
 typedef struct
@@ -2365,6 +2370,7 @@ typedef struct
 {
     int length;
     InputMapping mappings[MAX_MAPPING];
+    int player;
 } InputMappings;
 
 typedef struct

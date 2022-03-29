@@ -99,6 +99,8 @@ JVSConfigStatus parseInputMapping(char *path, InputMappings *inputMappings)
     if ((file = fopen(gamePath, "r")) == NULL)
         return JVS_CONFIG_STATUS_FILE_NOT_FOUND;
 
+    inputMappings->player = DEFAULT_PLAYER;
+
     while (fgets(buffer, MAX_LINE_LENGTH, file))
     {
 
@@ -114,6 +116,11 @@ JVSConfigStatus parseInputMapping(char *path, InputMappings *inputMappings)
             JVSConfigStatus status = parseInputMapping(getNextToken(NULL, " ", &saveptr), &tempInputMappings);
             if (status == JVS_CONFIG_STATUS_SUCCESS)
                 memcpy(inputMappings, &tempInputMappings, sizeof(InputMappings));
+        }
+        else if (strcmp(command, "PLAYER") == 0)
+        {
+            int player = atoi(getNextToken(NULL, " ", &saveptr));
+            inputMappings->player = player;
         }
         else if (command[0] == 'K' || command[0] == 'B' || command[0] == 'C')
         {

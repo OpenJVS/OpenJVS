@@ -494,7 +494,28 @@ int getInputs(DeviceList *deviceList)
         if (device < 0)
             continue;
 
+        // Get product vendor and ID information
+        struct input_id device_info;
+        ioctl(device, EVIOCGID, &device_info);
+        deviceList->devices[i].vendorID = device_info.vendor;
+        deviceList->devices[i].productID = device_info.product;
+        deviceList->devices[i].version = device_info.version;
+        deviceList->devices[i].bus = device_info.bustype;
+
+        // Get the name string
         ioctl(device, EVIOCGNAME(sizeof(deviceList->devices[i].fullName)), deviceList->devices[i].fullName);
+
+        // Get the physical location string
+        memset(deviceList->devices[i].phyiscalLocation, 0, 1);
+        ioctl(device, EVIOCGPHYS(sizeof(deviceList->devices[i].phyiscalLocation)), deviceList->devices[i].phyiscalLocation);
+        for (size_t j = 0; j < strlen(deviceList->devices[i].phyiscalLocation); j++)
+        {
+            if (deviceList->devices[i].phyiscalLocation[j] == '/')
+            {
+                deviceList->devices[i].phyiscalLocation[j] = 0;
+                break;
+            }
+        }
 
         for (size_t j = 0; j < strlen(deviceList->devices[i].fullName); j++)
         {
@@ -547,6 +568,22 @@ int getInputs(DeviceList *deviceList)
 
     free(namelist);
 
+    // Now we can bubble sort the device list
+
+    Device tmp;
+    for (int i = 0; i < deviceList->length; i++)
+    {
+        for (int j = 0; j < deviceList->length; j++)
+        {
+            if (strcmp(deviceList->devices[i].phyiscalLocation, deviceList->devices[j].phyiscalLocation) < 0)
+            {
+                tmp = deviceList->devices[i];
+                deviceList->devices[i] = deviceList->devices[j];
+                deviceList->devices[j] = tmp;
+            }
+        }
+    }
+
     return 1;
 }
 
@@ -560,8 +597,9 @@ static JVSInputStatus initInputsWiimote(int *playerNumber, DeviceList *deviceLis
         if (strstr(deviceList->devices[i].name, WIIMOTE_DEVICE_NAME) == NULL)
             continue;
 
-	if(strcmp(deviceList->devices[i].name, WIIMOTE_DEVICE_NAME_NUNCHUCK) == 0) {
-		
+        if (strcmp(deviceList->devices[i].name, WIIMOTE_DEVICE_NAME_NUNCHUCK) == 0)
+        {
+
             InputMappings inputMappings = {0};
             if (parseInputMapping(deviceList->devices[i].name, &inputMappings) != JVS_CONFIG_STATUS_SUCCESS || inputMappings.length == 0)
             {
@@ -579,7 +617,7 @@ static JVSInputStatus initInputsWiimote(int *playerNumber, DeviceList *deviceLis
             startThread(&evInputs, deviceList->devices[i].path, 0, *playerNumber, jvsIO);
 
             debug(0, "  Player %d:\t\t%s\n", *playerNumber, deviceList->devices[i].fullName);
-	}
+        }
 
         if (strcmp(deviceList->devices[i].name, WIIMOTE_DEVICE_NAME_IR) == 0)
             infraredDevice = i;
@@ -672,9 +710,17 @@ static JVSInputStatus initInputsNormalMapped(int *playerNumber, DeviceList *devi
             continue;
         }
 
-        startThread(&evInputs, deviceList->devices[i].path, 0, *playerNumber, jvsIO);
-        debug(0, "  Player %d:\t\t%s%s\n", *playerNumber, deviceList->devices[i].name, specialMap);
-        (*playerNumber)++;
+        if (inputMappings.player != -1)
+        {
+            startThread(&evInputs, deviceList->devices[i].path, 0, inputMappings.player, jvsIO);
+            debug(0, "  Player %d (Fixed via config):\t\t%s%s\n", inputMappings.player, deviceList->devices[i].name, specialMap);
+        }
+        else
+        {
+            startThread(&evInputs, deviceList->devices[i].path, 0, *playerNumber, jvsIO);
+            debug(0, "  Player %d:\t\t%s%s\n", *playerNumber, deviceList->devices[i].name, specialMap);
+            (*playerNumber)++;
+        }
     }
 
     return JVS_INPUT_STATUS_SUCCESS;
@@ -728,10 +774,9 @@ static JVSInputStatus initInputsAimtrak(int *playerNumber, DeviceList *deviceLis
         else
         {
             debug(0, "            %s  (mapped as CONTROLLER_%d in output)\n", deviceList->devices[i].name, *playerNumber);
-	    (*playerNumber)++;
+            (*playerNumber)++;
             cpRealAimtrakPlayer++;
         }
-
     }
 
     return JVS_INPUT_STATUS_SUCCESS;
