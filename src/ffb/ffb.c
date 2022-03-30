@@ -1,5 +1,6 @@
 #include "ffb/ffb.h"
 #include "console/debug.h"
+#include "controller/threading.h"
 
 void *ffbThread(void *_args);
 
@@ -10,10 +11,8 @@ FFBStatus initFFB(FFBState *state, FFBEmulationType type, char *serialPath)
     state->serial = -1;
     state->controller = -1;
 
-    if (pthread_create(&state->threadID, NULL, ffbThread, state) != 0)
-    {
+    if (createThread(ffbThread, state) != THREAD_STATUS_SUCCESS)
         return FFB_STATUS_ERROR;
-    }
 
     return FFB_STATUS_SUCCESS;
 }

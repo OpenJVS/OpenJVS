@@ -208,64 +208,56 @@ JVSCLIStatus printDeviceListing(Device *device)
  **/
 JVSCLIStatus printListing()
 {
-    JVSCLIStatus retval = JVS_CLI_STATUS_SUCCESS_CLOSE;
     DeviceList *deviceList = NULL;
-
     deviceList = malloc(sizeof(DeviceList));
 
     if (deviceList == NULL)
     {
         debug(0, "Error: Failed to malloc\n");
-        retval = EXIT_FAILURE;
+        return JVS_CLI_STATUS_ERROR;
     }
 
-    if (retval == JVS_CLI_STATUS_SUCCESS_CLOSE)
+    if (!getInputs(deviceList))
     {
-        if (!getInputs(deviceList))
-        {
-            debug(0, "OpenJVS failed to detect any controllers.\nMake sure you are running as root.\n");
-            retval = EXIT_FAILURE;
-        }
+        debug(0, "OpenJVS failed to detect any controllers.\nMake sure you are running as root.\n");
+        return JVS_CLI_STATUS_ERROR;
     }
 
-    if (retval == JVS_CLI_STATUS_SUCCESS_CLOSE)
+    debug(0, "OpenJVS can detect the following controllers:\n\n");
+    InputMappings inputMappings;
+    inputMappings.length = 0;
+    debug(0, "Enabled:\n");
+    for (int i = 0; i < deviceList->length; i++)
     {
-        debug(0, "OpenJVS can detect the following controllers:\n\n");
-        InputMappings inputMappings;
-        inputMappings.length = 0;
-        debug(0, "Enabled:\n");
-        for (int i = 0; i < deviceList->length; i++)
+        int enabled = parseInputMapping(deviceList->devices[i].name, &inputMappings) == JVS_CONFIG_STATUS_SUCCESS;
+        if (enabled)
         {
-            int enabled = parseInputMapping(deviceList->devices[i].name, &inputMappings) == JVS_CONFIG_STATUS_SUCCESS;
-            if (enabled)
-            {
-                printDeviceListing(&deviceList->devices[i]);
-            }
+            printDeviceListing(&deviceList->devices[i]);
         }
-        debug(0, "\nDisabled:\n");
-        for (int i = 0; i < deviceList->length; i++)
+    }
+    debug(0, "\nDisabled:\n");
+    for (int i = 0; i < deviceList->length; i++)
+    {
+        char disabledString[MAX_PATH_LENGTH];
+        strcpy(disabledString, deviceList->devices[i].name);
+        strcat(disabledString, ".disabled");
+        int disabled = parseInputMapping(disabledString, &inputMappings) == JVS_CONFIG_STATUS_SUCCESS;
+        if (disabled)
         {
-            char disabledString[MAX_PATH_LENGTH];
-            strcpy(disabledString, deviceList->devices[i].name);
-            strcat(disabledString, ".disabled");
-            int disabled = parseInputMapping(disabledString, &inputMappings) == JVS_CONFIG_STATUS_SUCCESS;
-            if (disabled)
-            {
-                printDeviceListing(&deviceList->devices[i]);
-            }
+            printDeviceListing(&deviceList->devices[i]);
         }
-        debug(0, "\nNo Mapping Present:\n");
-        for (int i = 0; i < deviceList->length; i++)
+    }
+    debug(0, "\nNo Mapping Present:\n");
+    for (int i = 0; i < deviceList->length; i++)
+    {
+        char disabledString[MAX_PATH_LENGTH];
+        strcpy(disabledString, deviceList->devices[i].name);
+        strcat(disabledString, ".disabled");
+        int enabled = parseInputMapping(deviceList->devices[i].name, &inputMappings) == JVS_CONFIG_STATUS_SUCCESS;
+        int disabled = parseInputMapping(disabledString, &inputMappings) == JVS_CONFIG_STATUS_SUCCESS;
+        if (!enabled && !disabled)
         {
-            char disabledString[MAX_PATH_LENGTH];
-            strcpy(disabledString, deviceList->devices[i].name);
-            strcat(disabledString, ".disabled");
-            int enabled = parseInputMapping(deviceList->devices[i].name, &inputMappings) == JVS_CONFIG_STATUS_SUCCESS;
-            int disabled = parseInputMapping(disabledString, &inputMappings) == JVS_CONFIG_STATUS_SUCCESS;
-            if (!enabled && !disabled)
-            {
-                printDeviceListing(&deviceList->devices[i]);
-            }
+            printDeviceListing(&deviceList->devices[i]);
         }
     }
 
@@ -275,7 +267,7 @@ JVSCLIStatus printListing()
         deviceList = NULL;
     }
 
-    return retval;
+    return JVS_CLI_STATUS_SUCCESS_CLOSE;
 }
 
 /**

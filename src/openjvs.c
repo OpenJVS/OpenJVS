@@ -227,7 +227,7 @@ void handleSignal(int signal)
 {
     if (signal == 2)
     {
-        debug(0, "\nWarning: OpenJVS is shutting down\n");
+        debug(0, "\nOpenJVS is stopping...\n");
         running = -1;
     }
 }

@@ -2392,6 +2392,7 @@ typedef struct
 
 typedef enum
 {
+    JVS_INPUT_STATUS_NO_DEVICE_ERROR,
     JVS_INPUT_STATUS_MALLOC_ERROR,
     JVS_INPUT_STATUS_DEVICE_OPEN_ERROR,
     JVS_INPUT_STATUS_OUTPUT_MAPPING_ERROR,
@@ -2400,7 +2401,7 @@ typedef enum
 
 JVSInputStatus initInputs(char *outputMappingPath, char *configPath, JVSIO *jvsIO, int autoDetect);
 int evDevFromString(char *evDevString);
-int getInputs(DeviceList *deviceList);
+JVSInputStatus getInputs(DeviceList *deviceList);
 ControllerInput controllerInputFromString(char *controllerInputString);
 ControllerPlayer controllerPlayerFromString(char *controllerPlayerString);
 int getNumberOfDevices();

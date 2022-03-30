@@ -44,7 +44,6 @@ typedef struct
 
 void *wiiDeviceThread(void *_args)
 {
-
     MappingThreadArguments *args = (MappingThreadArguments *)_args;
 
     int fd = open(args->devicePath, O_RDONLY);
@@ -183,18 +182,14 @@ void *deviceThread(void *_args)
 
     memset(absoluteBitmask, 0, sizeof(absoluteBitmask));
     if (ioctl(fd, EVIOCGBIT(EV_ABS, sizeof(absoluteBitmask)), absoluteBitmask) < 0)
-    {
-        perror("evdev ioctl");
-    }
+        perror("Error: Failed to get bit mask for analogue values");
 
     for (int axisIndex = 0; axisIndex < ABS_MAX; ++axisIndex)
     {
         if (test_bit(axisIndex, absoluteBitmask))
         {
             if (ioctl(fd, EVIOCGABS(axisIndex), &absoluteFeatures))
-            {
-                perror("IOCTL Error");
-            }
+                perror("Error: Failed to get device analogue limits");
 
             args->inputs.absMax[axisIndex] = (double)absoluteFeatures.maximum;
             args->inputs.absMin[axisIndex] = (double)absoluteFeatures.minimum;
@@ -477,27 +472,30 @@ int getNumberOfDevices()
     return scandir(DEV_INPUT_EVENT, &namelist, isEventDevice, NULL);
 }
 
-int getInputs(DeviceList *deviceList)
+JVSInputStatus getInputs(DeviceList *deviceList)
 {
     memset(deviceList, 0, sizeof(DeviceList));
     struct dirent **namelist;
 
     deviceList->length = scandir(DEV_INPUT_EVENT, &namelist, isEventDevice, alphasort);
-    if (deviceList->length < 1)
-    {
-        return 0;
-    }
 
-    char aimtrakRemap[3][32] = {AIMTRAK_DEVICE_NAME_REMAP_JOYSTICK, AIMTRAK_DEVICE_NAME_REMAP_OUT_SCREEN, AIMTRAK_DEVICE_NAME_REMAP_IN_SCREEN};
-    int aimtrakRemapID = 0;
+    if (deviceList->length == 0)
+        return JVS_INPUT_STATUS_NO_DEVICE_ERROR;
+
+    char aimtrakRemap[3][32] = {
+        AIMTRAK_DEVICE_NAME_REMAP_JOYSTICK,
+        AIMTRAK_DEVICE_NAME_REMAP_OUT_SCREEN,
+        AIMTRAK_DEVICE_NAME_REMAP_IN_SCREEN};
+    int aimtrakCount = 0;
 
     for (int i = 0; i < deviceList->length; i++)
     {
-        strcpy(deviceList->devices[i].name, "unknown");
-        strcpy(deviceList->devices[i].fullName, "Unknown");
-
         snprintf(deviceList->devices[i].path, sizeof(deviceList->devices[i].path), "%s/%s", DEV_INPUT_EVENT, namelist[i]->d_name);
         free(namelist[i]);
+
+        strcpy(deviceList->devices[i].name, "unknown");
+        strcpy(deviceList->devices[i].fullName, "Unknown");
+        deviceList->devices[i].type = DEVICE_TYPE_UNKNOWN;
 
         int device = open(deviceList->devices[i].path, O_RDONLY);
         if (device < 0)
@@ -515,7 +513,6 @@ int getInputs(DeviceList *deviceList)
         ioctl(device, EVIOCGNAME(sizeof(deviceList->devices[i].fullName)), deviceList->devices[i].fullName);
 
         // Get the physical location string
-        memset(deviceList->devices[i].physicalLocation, 0, 1);
         ioctl(device, EVIOCGPHYS(sizeof(deviceList->devices[i].physicalLocation)), deviceList->devices[i].physicalLocation);
         for (size_t j = 0; j < strlen(deviceList->devices[i].physicalLocation); j++)
         {
@@ -526,50 +523,46 @@ int getInputs(DeviceList *deviceList)
             }
         }
 
+        // Make it lower case and replace letters
         for (size_t j = 0; j < strlen(deviceList->devices[i].fullName); j++)
         {
             deviceList->devices[i].name[j] = tolower(deviceList->devices[i].fullName[j]);
-            if (deviceList->devices[i].name[j] == ' ' || deviceList->devices[i].name[j] == '/' || deviceList->devices[i].name[j] == '(' || deviceList->devices[i].name[j] == ')')
+            if (deviceList->devices[i].name[j] == ' ' ||
+                deviceList->devices[i].name[j] == '/' ||
+                deviceList->devices[i].name[j] == '(' ||
+                deviceList->devices[i].name[j] == ')')
             {
                 deviceList->devices[i].name[j] = '-';
             }
         }
 
-        /* Check if name starts with ultimarc */
+        // Assign the correct names for the aimtracks
         if (strcmp(deviceList->devices[i].name, AIMTRAK_DEVICE_NAME) == 0)
         {
-            strcpy(deviceList->devices[i].name, aimtrakRemap[aimtrakRemapID]);
-            aimtrakRemapID++;
-
-            if (aimtrakRemapID == 3)
-                aimtrakRemapID = 0;
+            strcpy(deviceList->devices[i].name, aimtrakRemap[aimtrakCount++]);
+            if (aimtrakCount == 3)
+                aimtrakCount = 0;
         }
 
-        deviceList->devices[i].type = DEVICE_TYPE_UNKNOWN;
+        // Attempt to work out the device type
         unsigned long bit[EV_MAX][NBITS(KEY_MAX)];
         memset(bit, 0, sizeof(bit));
         ioctl(device, EVIOCGBIT(0, EV_MAX), bit[0]);
 
         // If it does repeating events and key events, it's probably a keyboard.
         if (!test_bit_diff(EV_ABS, bit[0]) && test_bit_diff(EV_REP, bit[0]) && test_bit_diff(EV_KEY, bit[0]))
-        {
             deviceList->devices[i].type = DEVICE_TYPE_KEYBOARD;
-        }
 
         // Relative events means its a mouse!
         if (test_bit_diff(EV_REL, bit[0]))
-        {
             deviceList->devices[i].type = DEVICE_TYPE_MOUSE;
-        }
 
         // If it has a start button then it's probably a joystick!
         if (test_bit_diff(EV_KEY, bit[0]))
         {
             ioctl(device, EVIOCGBIT(EV_KEY, KEY_MAX), bit[EV_KEY]);
             if (test_bit_diff(BTN_START, bit[EV_KEY]))
-            {
                 deviceList->devices[i].type = DEVICE_TYPE_JOYSTICK;
-            }
         }
 
         close(device);
@@ -578,7 +571,6 @@ int getInputs(DeviceList *deviceList)
     free(namelist);
 
     // Now we can bubble sort the device list by name and then physical location
-
     for (int i = 0; i < deviceList->length - 1; i++)
     {
         for (int j = 0; j < deviceList->length - 1 - i; j++)
@@ -607,7 +599,7 @@ int getInputs(DeviceList *deviceList)
         }
     }
 
-    return 1;
+    return JVS_INPUT_STATUS_SUCCESS;
 }
 
 /**
@@ -624,15 +616,13 @@ int getInputs(DeviceList *deviceList)
  **/
 JVSInputStatus initInputs(char *outputMappingPath, char *configPath, JVSIO *jvsIO, int autoDetect)
 {
-    JVSInputStatus retval = JVS_INPUT_STATUS_SUCCESS;
     OutputMappings outputMappings = {0};
-
     DeviceList *deviceList = (DeviceList *)malloc(sizeof(DeviceList));
 
     if (deviceList == NULL)
         return JVS_INPUT_STATUS_MALLOC_ERROR;
 
-    if (!getInputs(deviceList))
+    if (getInputs(deviceList) != JVS_INPUT_STATUS_SUCCESS)
         return JVS_INPUT_STATUS_DEVICE_OPEN_ERROR;
 
     if (parseOutputMapping(outputMappingPath, &outputMappings, configPath) != JVS_CONFIG_STATUS_SUCCESS)
@@ -646,7 +636,7 @@ JVSInputStatus initInputs(char *outputMappingPath, char *configPath, JVSIO *jvsI
 
         char disabledPath[MAX_PATH_LENGTH];
         strcpy(disabledPath, DEFAULT_DEVICE_MAPPING_PATH);
-        strcat(disabledPath, deviceList->devices[i].name);
+        strcat(disabledPath, device->name);
         strcat(disabledPath, ".disabled");
         FILE *file = fopen(disabledPath, "r");
         if (file != NULL)
@@ -658,20 +648,18 @@ JVSInputStatus initInputs(char *outputMappingPath, char *configPath, JVSIO *jvsI
         /* Attempt to do a generic map */
         char specialMap[256] = "";
         InputMappings inputMappings = {0};
+
+        // Put the device name into a temp variable so it can be changed
         char deviceName[MAX_PATH_LENGTH];
         strcpy(deviceName, device->name);
 
         // Use the standard nintendo-wii-remote mapping file for the IR Version too
         if (strcmp(deviceName, WIIMOTE_DEVICE_NAME_IR) == 0)
-        {
             strcpy(deviceName, WIIMOTE_DEVICE_NAME);
-        }
 
         // Use the standard ultimarc-aimtrak mapping file for both screen events
         if (strcmp(deviceName, AIMTRAK_DEVICE_NAME_REMAP_JOYSTICK) == 0 || strcmp(deviceName, AIMTRAK_DEVICE_NAME_REMAP_OUT_SCREEN) == 0 || strcmp(deviceName, AIMTRAK_DEVICE_NAME_REMAP_IN_SCREEN) == 0)
-        {
             strcpy(deviceName, AIMTRAK_DEVICE_MAPPING_NAME);
-        }
 
         if (parseInputMapping(deviceName, &inputMappings) != JVS_CONFIG_STATUS_SUCCESS || inputMappings.length == 0)
         {
@@ -721,5 +709,5 @@ JVSInputStatus initInputs(char *outputMappingPath, char *configPath, JVSIO *jvsI
     free(deviceList);
     deviceList = NULL;
 
-    return retval;
+    return JVS_INPUT_STATUS_SUCCESS;
 }
