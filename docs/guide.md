@@ -96,6 +96,17 @@ If you'd like to stop the automatic detection, you can do this in the config fil
 
 Each new device is seen as a new player. For example if you plug 2 playstation controllers in, they will be mapped to PLAYER 1 and PLAYER 2. This means you should disable controllers you don't want to use, as they will take up player space.
 
+## Controller Ordering
+
+The controlers will be ordered from Player 1 -> Player 4 dependant on which port they are plugged into using a priority system. The priority is
+
+- Top Left
+- Bottom Left
+- Top Right
+- Bottom Right
+
+For example a controller plugged into Top Left would be player 1, and Bottom Right would be player 2. If another controller was then plugged into Bottom Left, this would take the place of Player 2 and the Bottom Right controller would become player 3.
+
 ## AimTrak
 
 The aimtrak support was added by fred and bobbydilley. Aimtraks should be plug and play, remember the calibrate the gametrak via the guns calibration setting before calibrating the actual game via the game test menu. The aimtrak must be setup in the following way:
