@@ -622,11 +622,15 @@ JVSInputStatus initInputs(char *outputMappingPath, char *configPath, JVSIO *jvsI
     if (deviceList == NULL)
         return JVS_INPUT_STATUS_MALLOC_ERROR;
 
-    if (getInputs(deviceList) != JVS_INPUT_STATUS_SUCCESS)
+    if (getInputs(deviceList) != JVS_INPUT_STATUS_SUCCESS) {
+        free(deviceList);
         return JVS_INPUT_STATUS_DEVICE_OPEN_ERROR;
+    }
 
-    if (parseOutputMapping(outputMappingPath, &outputMappings, configPath) != JVS_CONFIG_STATUS_SUCCESS)
+    if (parseOutputMapping(outputMappingPath, &outputMappings, configPath) != JVS_CONFIG_STATUS_SUCCESS) {
+        free(deviceList);
         return JVS_INPUT_STATUS_OUTPUT_MAPPING_ERROR;
+    }
 
     int playerNumber = 1;
 
