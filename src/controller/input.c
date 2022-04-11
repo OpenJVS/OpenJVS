@@ -49,7 +49,7 @@ void *wiiDeviceThread(void *_args)
     int fd = open(args->devicePath, O_RDONLY);
     if (fd < 0)
     {
-        printf("Failed to open device descriptor");
+        debug(0, "Warning: Failed to open Wii Remote device.");
         return 0;
     }
 
@@ -167,7 +167,7 @@ void *deviceThread(void *_args)
     int fd = open(args->devicePath, O_RDONLY);
     if (fd < 0)
     {
-        printf("Critical: Failed to open device file descriptor %d \n", fd);
+        debug(0, "Critical: Failed to open device file descriptor %d \n", fd);
         free(args);
         return 0;
     }
@@ -218,19 +218,25 @@ void *deviceThread(void *_args)
 
             case EV_KEY:
             {
+                JVSIO *io = args->jvsIO;
+                if(args->inputs.key[event.code].secondaryIO) {
+                    io = args->jvsIO->chainedIO;
+                }
+
+
                 /* Check if the coin button has been pressed */
                 if (args->inputs.key[event.code].output == COIN)
                 {
                     if (event.value == 1)
-                        incrementCoin(args->jvsIO, args->inputs.key[event.code].jvsPlayer, 1);
+                        incrementCoin(io, args->inputs.key[event.code].jvsPlayer, 1);
 
                     continue;
                 }
 
-                setSwitch(args->jvsIO, args->inputs.key[event.code].jvsPlayer, args->inputs.key[event.code].output, event.value == 0 ? 0 : 1);
+                setSwitch(io, args->inputs.key[event.code].jvsPlayer, args->inputs.key[event.code].output, event.value == 0 ? 0 : 1);
 
                 if (args->inputs.key[event.code].outputSecondary != NONE)
-                    setSwitch(args->jvsIO, args->inputs.key[event.code].jvsPlayer, args->inputs.key[event.code].outputSecondary, event.value == 0 ? 0 : 1);
+                    setSwitch(io, args->inputs.key[event.code].jvsPlayer, args->inputs.key[event.code].outputSecondary, event.value == 0 ? 0 : 1);
             }
             break;
 
@@ -288,6 +294,10 @@ void *deviceThread(void *_args)
                     /* Make sure it doesn't go over 1 or below 0 if its multiplied */
                     scaled = scaled > 1 ? 1 : scaled;
                     scaled = scaled < 0 ? 0 : scaled;
+
+                    if(args->jvsIO->chainedIO != NULL) {
+                        setRotary(args->jvsIO->chainedIO, args->inputs.abs[event.code].output, scaled);
+                    }
 
                     setAnalogue(args->jvsIO, args->inputs.abs[event.code].output, args->inputs.abs[event.code].reverse ? 1 - scaled : scaled);
                     setGun(args->jvsIO, args->inputs.abs[event.code].output, args->inputs.abs[event.code].reverse ? 1 - scaled : scaled);
@@ -614,7 +624,7 @@ JVSInputStatus getInputs(DeviceList *deviceList)
  * @param autoDetect If we should automatically map controllers without mappings
  * @returns The status of the operation
  **/
-JVSInputStatus initInputs(char *outputMappingPath, char *configPath, JVSIO *jvsIO, int autoDetect)
+JVSInputStatus initInputs(char *outputMappingPath, char *configPath, char* secondConfigPath, JVSIO *jvsIO, int autoDetect)
 {
     OutputMappings outputMappings = {0};
     DeviceList *deviceList = (DeviceList *)malloc(sizeof(DeviceList));
@@ -627,7 +637,7 @@ JVSInputStatus initInputs(char *outputMappingPath, char *configPath, JVSIO *jvsI
         return JVS_INPUT_STATUS_DEVICE_OPEN_ERROR;
     }
 
-    if (parseOutputMapping(outputMappingPath, &outputMappings, configPath) != JVS_CONFIG_STATUS_SUCCESS) {
+    if (parseOutputMapping(outputMappingPath, &outputMappings, configPath, secondConfigPath) != JVS_CONFIG_STATUS_SUCCESS) {
         free(deviceList);
         return JVS_INPUT_STATUS_OUTPUT_MAPPING_ERROR;
     }

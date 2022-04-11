@@ -29,6 +29,7 @@ typedef struct
     char devicePath[MAX_PATH_LENGTH];
     int debugLevel;
     char capabilitiesPath[MAX_PATH_LENGTH];
+    char secondCapabilitiesPath[MAX_PATH_LENGTH];
     int autoControllerDetection;
 } JVSConfig;
 
@@ -43,7 +44,7 @@ typedef enum
 JVSConfigStatus getDefaultConfig(JVSConfig *config);
 JVSConfigStatus parseConfig(char *path, JVSConfig *config);
 JVSConfigStatus parseInputMapping(char *path, InputMappings *inputMappings);
-JVSConfigStatus parseOutputMapping(char *path, OutputMappings *outputMappings, char *configPath);
+JVSConfigStatus parseOutputMapping(char *path, OutputMappings *outputMappings, char *configPath, char* secondConfigPath);
 JVSConfigStatus parseRotary(char *path, int rotary, char *output);
 JVSConfigStatus parseIO(char *path, JVSCapabilities *capabilities);
 

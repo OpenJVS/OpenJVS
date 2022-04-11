@@ -148,9 +148,18 @@ JVSStatus processPacket(JVSIO *jvsIO)
 	if (readPacketStatus != JVS_STATUS_SUCCESS)
 		return readPacketStatus;
 
-	/* Check if the packet is for us */
-	if (inputPacket.destination != BROADCAST && inputPacket.destination != jvsIO->deviceID)
-		return JVS_STATUS_NOT_FOR_US;
+	/* Check if the packet is for us and loop through connected boards */
+	if (inputPacket.destination != BROADCAST) {
+		while(inputPacket.destination != jvsIO->deviceID && jvsIO->chainedIO != NULL) {
+			jvsIO = jvsIO->chainedIO;
+		}
+
+		if (inputPacket.destination != jvsIO->deviceID) {
+			printf("BING BOY NOT FOR US!!\n");
+			return JVS_STATUS_NOT_FOR_US;
+
+		}
+	}
 
 	/* Handle re-transmission requests */
 	if (inputPacket.data[0] == CMD_RETRANSMIT)
@@ -179,8 +188,8 @@ JVSStatus processPacket(JVSIO *jvsIO)
 			jvsIO->deviceID = -1;
 			while (jvsIO->chainedIO != NULL)
 			{
-				jvsIO->deviceID = -1;
 				jvsIO = jvsIO->chainedIO;
+				jvsIO->deviceID = -1;
 			}
 			setSenseLine(0);
 		}
@@ -191,9 +200,18 @@ JVSStatus processPacket(JVSIO *jvsIO)
 		{
 			debug(1, "CMD_ASSIGN_ADDR\n");
 			size = 2;
-			jvsIO->deviceID = inputPacket.data[index + 1];
+
+			JVSIO *ioToAssign = jvsIO;
+			while (ioToAssign->chainedIO != NULL && ioToAssign->chainedIO->deviceID == -1) {
+				ioToAssign = jvsIO->chainedIO;
+			}
+
+			ioToAssign->deviceID = inputPacket.data[index + 1];
 			outputPacket.data[outputPacket.length++] = REPORT_SUCCESS;
-			setSenseLine(1);
+
+			if(jvsIO->deviceID != -1) {
+				setSenseLine(1);
+			}
 		}
 		break;
 
@@ -307,7 +325,7 @@ JVSStatus processPacket(JVSIO *jvsIO)
 			for (int i = 0; i < inputPacket.data[index + 1]; i++)
 			{
 				outputPacket.data[outputPacket.length] = jvsIO->state.rotaryChannel[i] >> 8;
-				outputPacket.data[outputPacket.length + 1] = jvsIO->state.rotaryChannel[i];
+				outputPacket.data[outputPacket.length + 1] = jvsIO->state.rotaryChannel[i] & 0xFF;
 				outputPacket.length += 2;
 			}
 		}
@@ -451,7 +469,7 @@ JVSStatus processPacket(JVSIO *jvsIO)
 				if (!inputPacket.data[index + i])
 					break;
 			}
-			printf("CMD_CONVEY_ID = %s\n", idData);
+			debug(0, "CMD_CONVEY_ID = %s\n", idData);
 		}
 		break;
 

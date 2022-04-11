@@ -31,6 +31,7 @@ JVSConfigStatus getDefaultConfig(JVSConfig *config)
     strcpy(config->defaultGamePath, DEFAULT_GAME);
     strcpy(config->devicePath, DEFAULT_DEVICE_PATH);
     strcpy(config->capabilitiesPath, DEFAULT_IO);
+    config->secondCapabilitiesPath[0] = 0x00;
     return JVS_CONFIG_STATUS_SUCCESS;
 }
 
@@ -61,6 +62,9 @@ JVSConfigStatus parseConfig(char *path, JVSConfig *config)
 
         else if (strcmp(command, "EMULATE") == 0)
             strcpy(config->capabilitiesPath, getNextToken(NULL, " ", &saveptr));
+
+        else if (strcmp(command, "EMULATE_SECOND") == 0)
+            strcpy(config->secondCapabilitiesPath, getNextToken(NULL, " ", &saveptr));
 
         else if (strcmp(command, "SENSE_LINE_PIN") == 0)
             config->senseLinePin = atoi(getNextToken(NULL, " ", &saveptr));
@@ -207,7 +211,7 @@ JVSConfigStatus parseInputMapping(char *path, InputMappings *inputMappings)
     return JVS_CONFIG_STATUS_SUCCESS;
 }
 
-JVSConfigStatus parseOutputMapping(char *path, OutputMappings *outputMappings, char *configPath)
+JVSConfigStatus parseOutputMapping(char *path, OutputMappings *outputMappings, char *configPath, char* secondConfigPath)
 {
     FILE *file;
     char buffer[MAX_LINE_LENGTH];
@@ -228,7 +232,7 @@ JVSConfigStatus parseOutputMapping(char *path, OutputMappings *outputMappings, c
             continue;
 
         char *command = getNextToken(buffer, " ", &saveptr);
-        int analogueToDigital;
+        int analogueToDigital = 0;
         if (strcmp(command, "DIGITAL") == 0)
         {
             analogueToDigital = 1;
@@ -237,21 +241,29 @@ JVSConfigStatus parseOutputMapping(char *path, OutputMappings *outputMappings, c
             // token for the actual axis.
             command = getNextToken(NULL, " ", &saveptr);
         }
-        else
-        {
-            analogueToDigital = 0;
-        }
 
+        /* Move the next mapping onto the secondary IO */
+        int secondaryIO = 0;
+        if (strcmp(command, "SECONDARY") == 0)
+        {
+            secondaryIO = 1;
+            command = getNextToken(NULL, " ", &saveptr);
+        }
+        
         if (strcmp(command, "INCLUDE") == 0)
         {
             OutputMappings tempOutputMappings;
-            JVSConfigStatus status = parseOutputMapping(getNextToken(NULL, " ", &saveptr), &tempOutputMappings, configPath);
+            JVSConfigStatus status = parseOutputMapping(getNextToken(NULL, " ", &saveptr), &tempOutputMappings, configPath, secondConfigPath);
             if (status == JVS_CONFIG_STATUS_SUCCESS)
                 memcpy(outputMappings, &tempOutputMappings, sizeof(OutputMappings));
         }
         else if (strcmp(command, "EMULATE") == 0)
         {
             strcpy(configPath, getNextToken(NULL, " ", &saveptr));
+        }
+        else if (strcmp(command, "EMULATE_SECOND") == 0)
+        {
+            strcpy(secondConfigPath, getNextToken(NULL, " ", &saveptr));
         }
         else if (command[11] == 'B' || analogueToDigital)
         {
@@ -262,13 +274,13 @@ JVSConfigStatus parseOutputMapping(char *path, OutputMappings *outputMappings, c
                 .controllerPlayer = controllerPlayer,
                 .output = jvsInputFromString(getNextToken(NULL, " ", &saveptr)),
                 .outputSecondary = NONE,
-                .jvsPlayer = jvsPlayerFromString(getNextToken(NULL, " ", &saveptr))};
+                .jvsPlayer = jvsPlayerFromString(getNextToken(NULL, " ", &saveptr)),
+                .secondaryIO = secondaryIO};
 
             /* Check to see if we have a secondary output */
             char *secondaryOutput = getNextToken(NULL, " ", &saveptr);
             if (secondaryOutput != NULL)
             {
-                printf("Adding secondary output\n");
                 mapping.outputSecondary = jvsInputFromString(secondaryOutput);
             }
 
@@ -281,7 +293,8 @@ JVSConfigStatus parseOutputMapping(char *path, OutputMappings *outputMappings, c
                 .type = ANALOGUE,
                 .input = controllerInputFromString(command),
                 .controllerPlayer = controllerPlayerFromString(getNextToken(NULL, " ", &saveptr)),
-                .output = jvsInputFromString(getNextToken(NULL, " ", &saveptr))};
+                .output = jvsInputFromString(getNextToken(NULL, " ", &saveptr)),
+                .secondaryIO = secondaryIO};
 
             /* Check to see if we should reverse */
             char *reverse = getNextToken(NULL, " ", &saveptr);

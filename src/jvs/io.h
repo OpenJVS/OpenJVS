@@ -192,7 +192,7 @@ int setSwitch(JVSIO *io, JVSPlayer player, JVSInput switchNumber, int value);
 int incrementCoin(JVSIO *io, JVSPlayer player, int amount);
 int setAnalogue(JVSIO *io, JVSInput channel, double value);
 int setGun(JVSIO *io, JVSInput channel, double value);
-int setRotary(JVSIO *io, JVSInput channel, int value);
+int setRotary(JVSIO *io, JVSInput channel, double value);
 
 JVSInput jvsInputFromString(char *jvsInputString);
 JVSPlayer jvsPlayerFromString(char *jvsPlayerString);

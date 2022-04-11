@@ -75,12 +75,16 @@ int setGun(JVSIO *io, JVSInput channel, double value)
 	return 1;
 }
 
-int setRotary(JVSIO *io, JVSInput channel, int value)
+int setRotary(JVSIO *io, JVSInput channel, double value)
 {
 	if (channel >= io->capabilities.rotaryChannels)
 		return 0;
 
-	io->state.rotaryChannel[channel] = value;
+	value = value * 2 - 1;
+
+	if(value > 0.2 || value < -0.2)
+		io->state.rotaryChannel[channel] = io->state.rotaryChannel[channel] + value;
+	printf("H %d\n", io->state.rotaryChannel[channel] );
 	return 1;
 }
 

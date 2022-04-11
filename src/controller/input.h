@@ -2365,6 +2365,7 @@ typedef struct
     JVSPlayer jvsPlayer;
     int reverse;
     double multiplier;
+    int secondaryIO;
 } OutputMapping;
 
 typedef struct
@@ -2399,7 +2400,7 @@ typedef enum
     JVS_INPUT_STATUS_SUCCESS
 } JVSInputStatus;
 
-JVSInputStatus initInputs(char *outputMappingPath, char *configPath, JVSIO *jvsIO, int autoDetect);
+JVSInputStatus initInputs(char *outputMappingPath, char *configPath, char* secondConfigPath, JVSIO *jvsIO, int autoDetect);
 int evDevFromString(char *evDevString);
 JVSInputStatus getInputs(DeviceList *deviceList);
 ControllerInput controllerInputFromString(char *controllerInputString);
