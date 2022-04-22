@@ -219,10 +219,10 @@ void *deviceThread(void *_args)
             case EV_KEY:
             {
                 JVSIO *io = args->jvsIO;
-                if(args->inputs.key[event.code].secondaryIO) {
+                if (args->inputs.key[event.code].secondaryIO)
+                {
                     io = args->jvsIO->chainedIO;
                 }
-
 
                 /* Check if the coin button has been pressed */
                 if (args->inputs.key[event.code].output == COIN)
@@ -237,6 +237,23 @@ void *deviceThread(void *_args)
 
                 if (args->inputs.key[event.code].outputSecondary != NONE)
                     setSwitch(io, args->inputs.key[event.code].jvsPlayer, args->inputs.key[event.code].outputSecondary, event.value == 0 ? 0 : 1);
+            }
+            break;
+
+            case EV_REL:
+            {
+                JVSIO *io = args->jvsIO;
+
+                if (!args->inputs.relEnabled[event.code])
+                    continue;
+
+                if (args->inputs.rel[event.code].secondaryIO && args->jvsIO->chainedIO != NULL)
+                    io = args->jvsIO->chainedIO;
+
+                int reverse = args->inputs.rel[event.code].reverse;
+
+                int oldRotaryValue = getRotary(io, args->inputs.rel[event.code].output);
+                setRotary(io, args->inputs.rel[event.code].output, oldRotaryValue + (reverse ? event.value * -1 : event.value));
             }
             break;
 
@@ -294,10 +311,6 @@ void *deviceThread(void *_args)
                     /* Make sure it doesn't go over 1 or below 0 if its multiplied */
                     scaled = scaled > 1 ? 1 : scaled;
                     scaled = scaled < 0 ? 0 : scaled;
-
-                    if(args->jvsIO->chainedIO != NULL) {
-                        setRotary(args->jvsIO->chainedIO, args->inputs.abs[event.code].output, scaled);
-                    }
 
                     setAnalogue(args->jvsIO, args->inputs.abs[event.code].output, args->inputs.abs[event.code].reverse ? 1 - scaled : scaled);
                     setGun(args->jvsIO, args->inputs.abs[event.code].output, args->inputs.abs[event.code].reverse ? 1 - scaled : scaled);
@@ -453,6 +466,13 @@ int processMappings(InputMappings *inputMappings, OutputMappings *outputMappings
             evInputs->abs[inputMappings->mappings[i].code].type = ANALOGUE;
             evInputs->absEnabled[inputMappings->mappings[i].code] = 1;
             evInputs->absMultiplier[inputMappings->mappings[i].code] = multiplier;
+        }
+        else if (inputMappings->mappings[i].type == ROTARY && tempMapping.type == ROTARY)
+        {
+            evInputs->rel[inputMappings->mappings[i].code] = tempMapping;
+            evInputs->rel[inputMappings->mappings[i].code].type = ROTARY;
+            evInputs->relEnabled[inputMappings->mappings[i].code] = 1;
+            evInputs->relMultiplier[inputMappings->mappings[i].code] = multiplier;
         }
         else if (inputMappings->mappings[i].type == SWITCH || tempMapping.type == SWITCH)
         {
@@ -624,7 +644,7 @@ JVSInputStatus getInputs(DeviceList *deviceList)
  * @param autoDetect If we should automatically map controllers without mappings
  * @returns The status of the operation
  **/
-JVSInputStatus initInputs(char *outputMappingPath, char *configPath, char* secondConfigPath, JVSIO *jvsIO, int autoDetect)
+JVSInputStatus initInputs(char *outputMappingPath, char *configPath, char *secondConfigPath, JVSIO *jvsIO, int autoDetect)
 {
     OutputMappings outputMappings = {0};
     DeviceList *deviceList = (DeviceList *)malloc(sizeof(DeviceList));
@@ -632,12 +652,14 @@ JVSInputStatus initInputs(char *outputMappingPath, char *configPath, char* secon
     if (deviceList == NULL)
         return JVS_INPUT_STATUS_MALLOC_ERROR;
 
-    if (getInputs(deviceList) != JVS_INPUT_STATUS_SUCCESS) {
+    if (getInputs(deviceList) != JVS_INPUT_STATUS_SUCCESS)
+    {
         free(deviceList);
         return JVS_INPUT_STATUS_DEVICE_OPEN_ERROR;
     }
 
-    if (parseOutputMapping(outputMappingPath, &outputMappings, configPath, secondConfigPath) != JVS_CONFIG_STATUS_SUCCESS) {
+    if (parseOutputMapping(outputMappingPath, &outputMappings, configPath, secondConfigPath) != JVS_CONFIG_STATUS_SUCCESS)
+    {
         free(deviceList);
         return JVS_INPUT_STATUS_OUTPUT_MAPPING_ERROR;
     }

@@ -85,6 +85,12 @@ typedef enum
     CONTROLLER_ANALOGUE_R,
     CONTROLLER_ANALOGUE_L,
     CONTROLLER_ANALOGUE_T,
+    CONTROLLER_ROTARY_X,
+    CONTROLLER_ROTARY_Y,
+    CONTROLLER_ROTARY_Z,
+    CONTROLLER_ROTARY_R,
+    CONTROLLER_ROTARY_L,
+    CONTROLLER_ROTARY_T
 } ControllerInput;
 
 static const struct
@@ -119,7 +125,12 @@ static const struct
     {"CONTROLLER_ANALOGUE_R", CONTROLLER_ANALOGUE_R},
     {"CONTROLLER_ANALOGUE_L", CONTROLLER_ANALOGUE_L},
     {"CONTROLLER_ANALOGUE_T", CONTROLLER_ANALOGUE_T},
-};
+    {"CONTROLLER_ROTARY_X", CONTROLLER_ROTARY_X},
+    {"CONTROLLER_ROTARY_Y", CONTROLLER_ROTARY_Y},
+    {"CONTROLLER_ROTARY_Z", CONTROLLER_ROTARY_Z},
+    {"CONTROLLER_ROTARY_R", CONTROLLER_ROTARY_R},
+    {"CONTROLLER_ROTARY_L", CONTROLLER_ROTARY_L},
+    {"CONTROLLER_ROTARY_T", CONTROLLER_ROTARY_T}};
 
 typedef enum
 {
@@ -2383,11 +2394,14 @@ typedef struct
 
 typedef struct
 {
+    int relEnabled[MAX_EV_ITEMS];
     int absEnabled[MAX_EV_ITEMS];
     double absMultiplier[MAX_EV_ITEMS];
+    double relMultiplier[MAX_EV_ITEMS];
     int absMin[MAX_EV_ITEMS];
     int absMax[MAX_EV_ITEMS];
     OutputMapping abs[MAX_EV_ITEMS];
+    OutputMapping rel[MAX_EV_ITEMS];
     OutputMapping key[MAX_EV_ITEMS];
 } EVInputs;
 
@@ -2400,7 +2414,7 @@ typedef enum
     JVS_INPUT_STATUS_SUCCESS
 } JVSInputStatus;
 
-JVSInputStatus initInputs(char *outputMappingPath, char *configPath, char* secondConfigPath, JVSIO *jvsIO, int autoDetect);
+JVSInputStatus initInputs(char *outputMappingPath, char *configPath, char *secondConfigPath, JVSIO *jvsIO, int autoDetect);
 int evDevFromString(char *evDevString);
 JVSInputStatus getInputs(DeviceList *deviceList);
 ControllerInput controllerInputFromString(char *controllerInputString);

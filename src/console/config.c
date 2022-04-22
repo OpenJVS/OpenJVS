@@ -187,6 +187,40 @@ JVSConfigStatus parseInputMapping(char *path, InputMappings *inputMappings)
             inputMappings->mappings[inputMappings->length] = mapping;
             inputMappings->length++;
         }
+        else if (command[0] == 'R')
+        {
+            char *firstArgument = getNextToken(NULL, " ", &saveptr);
+            InputMapping mapping;
+
+            // Normal Relative Mapping
+            InputMapping analogueMapping = {
+                .type = ROTARY,
+                .code = evDevFromString(command),
+                .input = controllerInputFromString(firstArgument),
+                .reverse = 0,
+                .multiplier = 1,
+            };
+
+            /* Check to see if we should reverse */
+            char *extra = getNextToken(NULL, " ", &saveptr);
+            while (extra != NULL)
+            {
+                if (strcmp(extra, "REVERSE") == 0)
+                {
+                    analogueMapping.reverse = 1;
+                }
+                else if (strcmp(extra, "SENSITIVITY") == 0)
+                {
+                    analogueMapping.multiplier = atof(getNextToken(NULL, " ", &saveptr));
+                }
+                extra = getNextToken(NULL, " ", &saveptr);
+            }
+
+            mapping = analogueMapping;
+
+            inputMappings->mappings[inputMappings->length] = mapping;
+            inputMappings->length++;
+        }
         else if (command[0] == 'M')
         {
             int code = evDevFromString(command);
@@ -211,7 +245,7 @@ JVSConfigStatus parseInputMapping(char *path, InputMappings *inputMappings)
     return JVS_CONFIG_STATUS_SUCCESS;
 }
 
-JVSConfigStatus parseOutputMapping(char *path, OutputMappings *outputMappings, char *configPath, char* secondConfigPath)
+JVSConfigStatus parseOutputMapping(char *path, OutputMappings *outputMappings, char *configPath, char *secondConfigPath)
 {
     FILE *file;
     char buffer[MAX_LINE_LENGTH];
@@ -249,7 +283,7 @@ JVSConfigStatus parseOutputMapping(char *path, OutputMappings *outputMappings, c
             secondaryIO = 1;
             command = getNextToken(NULL, " ", &saveptr);
         }
-        
+
         if (strcmp(command, "INCLUDE") == 0)
         {
             OutputMappings tempOutputMappings;
@@ -291,6 +325,25 @@ JVSConfigStatus parseOutputMapping(char *path, OutputMappings *outputMappings, c
         {
             OutputMapping mapping = {
                 .type = ANALOGUE,
+                .input = controllerInputFromString(command),
+                .controllerPlayer = controllerPlayerFromString(getNextToken(NULL, " ", &saveptr)),
+                .output = jvsInputFromString(getNextToken(NULL, " ", &saveptr)),
+                .secondaryIO = secondaryIO};
+
+            /* Check to see if we should reverse */
+            char *reverse = getNextToken(NULL, " ", &saveptr);
+            if (reverse != NULL && strcmp(reverse, "REVERSE") == 0)
+            {
+                mapping.reverse = 1;
+            }
+
+            outputMappings->mappings[outputMappings->length] = mapping;
+            outputMappings->length++;
+        }
+        else if (command[11] == 'R')
+        {
+            OutputMapping mapping = {
+                .type = ROTARY,
                 .input = controllerInputFromString(command),
                 .controllerPlayer = controllerPlayerFromString(getNextToken(NULL, " ", &saveptr)),
                 .output = jvsInputFromString(getNextToken(NULL, " ", &saveptr)),
