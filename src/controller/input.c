@@ -585,7 +585,9 @@ JVSInputStatus getInputs(DeviceList *deviceList)
 
         // Relative events means its a mouse!
         if (test_bit_diff(EV_REL, bit[0]))
+        {
             deviceList->devices[i].type = DEVICE_TYPE_MOUSE;
+        }
 
         // If it has a start button then it's probably a joystick!
         if (test_bit_diff(EV_KEY, bit[0]))
@@ -712,6 +714,11 @@ JVSInputStatus initInputs(char *outputMappingPath, char *configPath, char *secon
                     if (parseInputMapping("generic-keyboard", &inputMappings) != JVS_CONFIG_STATUS_SUCCESS || inputMappings.length == 0)
                         continue;
                     strcpy(specialMap, " (Generic Keyboard Map)");
+                    break;
+                case DEVICE_TYPE_MOUSE:
+                    if (parseInputMapping("generic-mouse", &inputMappings) != JVS_CONFIG_STATUS_SUCCESS || inputMappings.length == 0)
+                        continue;
+                    strcpy(specialMap, " (Generic Mouse Map)");
                     break;
                 default:
                     continue;

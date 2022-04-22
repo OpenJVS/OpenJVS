@@ -149,15 +149,16 @@ JVSStatus processPacket(JVSIO *jvsIO)
 		return readPacketStatus;
 
 	/* Check if the packet is for us and loop through connected boards */
-	if (inputPacket.destination != BROADCAST) {
-		while(inputPacket.destination != jvsIO->deviceID && jvsIO->chainedIO != NULL) {
+	if (inputPacket.destination != BROADCAST)
+	{
+		while (inputPacket.destination != jvsIO->deviceID && jvsIO->chainedIO != NULL)
+		{
 			jvsIO = jvsIO->chainedIO;
 		}
 
-		if (inputPacket.destination != jvsIO->deviceID) {
-			printf("BING BOY NOT FOR US!!\n");
+		if (inputPacket.destination != jvsIO->deviceID)
+		{
 			return JVS_STATUS_NOT_FOR_US;
-
 		}
 	}
 
@@ -202,14 +203,16 @@ JVSStatus processPacket(JVSIO *jvsIO)
 			size = 2;
 
 			JVSIO *ioToAssign = jvsIO;
-			while (ioToAssign->chainedIO != NULL && ioToAssign->chainedIO->deviceID == -1) {
+			while (ioToAssign->chainedIO != NULL && ioToAssign->chainedIO->deviceID == -1)
+			{
 				ioToAssign = jvsIO->chainedIO;
 			}
 
 			ioToAssign->deviceID = inputPacket.data[index + 1];
 			outputPacket.data[outputPacket.length++] = REPORT_SUCCESS;
 
-			if(jvsIO->deviceID != -1) {
+			if (jvsIO->deviceID != -1)
+			{
 				setSenseLine(1);
 			}
 		}
