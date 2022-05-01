@@ -16,7 +16,7 @@
 #include "version.h"
 
 /* Time between reinit in ms */
-#define TIME_REINIT 1000000 // 1 second
+#define TIME_REINIT 200
 
 void cleanup();
 void handleSignal(int signal);
@@ -97,7 +97,7 @@ int main(int argc, char **argv)
 
         // Create the JVSIO
         JVSIO io = {0};
-        io.deviceID = 2;
+        io.deviceID = 1;
         io.chainedIO = NULL;
 
         debug(1, "Init inputs\n");
@@ -163,9 +163,11 @@ int main(int argc, char **argv)
 
         debug(1, "ABOUT TO PAARSE Second IO\n");
 
-        if(config.secondCapabilitiesPath[0] != 0x00) {
+        if (config.secondCapabilitiesPath[0] != 0x00)
+        {
             debug(1, "Parse Second IO\n");
             JVSIO secondIO = {0};
+            io.deviceID = 2;
             secondIO.deviceID = 1;
             ioStatus = parseIO(config.secondCapabilitiesPath, &secondIO.capabilities);
             if (ioStatus != JVS_CONFIG_STATUS_SUCCESS)
@@ -179,11 +181,12 @@ int main(int argc, char **argv)
                     debug(0, "Critical: Failed to parse an IO file.\n");
                 }
                 return EXIT_FAILURE;
-            } else {
+            }
+            else
+            {
                 io.chainedIO = &secondIO;
             }
-        }        
-       
+        }
 
         /* Init the Virtual IO */
         debug(1, "Init IO\n");
@@ -193,8 +196,9 @@ int main(int argc, char **argv)
             return EXIT_FAILURE;
         }
 
-        if(io.chainedIO != NULL) {
-             debug(1, "Init Second IO\n");
+        if (io.chainedIO != NULL)
+        {
+            debug(1, "Init Second IO\n");
             if (!initIO(io.chainedIO))
             {
                 debug(0, "Critical: Failed to init second IO\n");
@@ -212,7 +216,8 @@ int main(int argc, char **argv)
 
         /* Print out what is being emulated */
         debug(0, "\nYou are currently emulating a \033[0;31m%s\033[0m ", io.capabilities.displayName);
-        if(io.chainedIO != NULL) {
+        if (io.chainedIO != NULL)
+        {
             debug(0, "chained to a \033[0;31m%s\033[0m ", io.chainedIO->capabilities.displayName);
         }
         printf("on %s.\n\n", config.devicePath);

@@ -602,21 +602,6 @@ JVSInputStatus getInputs(DeviceList *deviceList)
 
     free(namelist);
 
-    // Now we can bubble sort the device list by name and then physical location
-    for (int i = 0; i < deviceList->length - 1; i++)
-    {
-        for (int j = 0; j < deviceList->length - 1 - i; j++)
-        {
-            Device tmp;
-            if (strcmp(deviceList->devices[j].name, deviceList->devices[j + 1].name) > 0)
-            {
-                tmp = deviceList->devices[j];
-                deviceList->devices[j] = deviceList->devices[j + 1];
-                deviceList->devices[j + 1] = tmp;
-            }
-        }
-    }
-
     for (int i = 0; i < deviceList->length - 1; i++)
     {
         for (int j = 0; j < deviceList->length - 1 - i; j++)
@@ -735,13 +720,13 @@ JVSInputStatus initInputs(char *outputMappingPath, char *configPath, char *secon
 
         if (inputMappings.player != -1)
         {
-            startThread(&evInputs, device->path, strcmp(device->name, WIIMOTE_DEVICE_NAME_IR), inputMappings.player, jvsIO);
+            startThread(&evInputs, device->path, strcmp(device->name, WIIMOTE_DEVICE_NAME_IR) == 0, inputMappings.player, jvsIO);
             debug(0, "  Player %d (Fixed via config):\t\t%s%s\n", inputMappings.player, deviceList->devices[i].name, specialMap);
         }
         else
         {
             startThread(&evInputs, device->path, strcmp(device->name, WIIMOTE_DEVICE_NAME_IR) == 0, playerNumber, jvsIO);
-            if (strcmp(deviceList->devices[i].name, AIMTRAK_DEVICE_NAME_REMAP_IN_SCREEN) != 0 && strcmp(deviceList->devices[i].name, AIMTRAK_DEVICE_NAME_REMAP_JOYSTICK) != 0 && strcmp(deviceList->devices[i].name, WIIMOTE_DEVICE_NAME) != 0)
+            if (strcmp(deviceList->devices[i].name, AIMTRAK_DEVICE_NAME_REMAP_OUT_SCREEN) != 0 && strcmp(deviceList->devices[i].name, AIMTRAK_DEVICE_NAME_REMAP_JOYSTICK) != 0 && strcmp(deviceList->devices[i].name, WIIMOTE_DEVICE_NAME) != 0)
             {
                 debug(0, "  Player %d:\t\t%s%s\n", playerNumber, deviceName, specialMap);
                 playerNumber++;
