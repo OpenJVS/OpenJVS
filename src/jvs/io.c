@@ -18,6 +18,9 @@ int initIO(JVSIO *io)
 	for (int player = 0; player < io->capabilities.coins; player++)
 		io->state.coinCount[player] = 0;
 
+	for (int gpio = 0; gpio < io->capabilities.generalPurposeOutputs; gpio++)
+		io->state.generalPurposeOutput[gpio] = 0;
+
 	io->analogueMax = pow(2, io->capabilities.analogueInBits) - 1;
 	io->gunXMax = pow(2, io->capabilities.gunXBits) - 1;
 	io->gunYMax = pow(2, io->capabilities.gunYBits) - 1;
@@ -90,6 +93,19 @@ int getRotary(JVSIO *io, JVSInput channel)
 		return 0;
 
 	return io->state.rotaryChannel[channel];
+}
+
+int setGeneralPurposeOutputByte(JVSIO *io, int channel, unsigned char value)
+{
+	io->state.generalPurposeOutput[channel] = value;
+	printf("SET ");
+	for (int i = 0; i < 4; i++)
+	{
+		printf("%X ", io->state.generalPurposeOutput[i]);
+	}
+	unsigned char val = io->state.generalPurposeOutput[1] << 6 | io->state.generalPurposeOutput[2];
+	printf("\n %d\n", val);
+	return 1;
 }
 
 JVSInput jvsInputFromString(char *jvsInputString)

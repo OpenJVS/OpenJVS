@@ -28,3 +28,6 @@ DEVICE_PATH /dev/ttyUSB0
 # that haven't already been mapped.
 AUTO_CONTROLLER_DETECTION 1
 
+# Force Feedback Setup
+FFB_DEVICE_PATH /dev/ttyUSB1
+FFB_ENABLE 0

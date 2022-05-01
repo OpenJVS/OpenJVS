@@ -113,7 +113,7 @@ int initJVS(JVSIO *jvsIO);
 
 int disconnectJVS();
 
-JVSStatus processPacket(JVSIO *jvsIO);
+JVSStatus processPacket(JVSIO *jvsIO, FFBState *ffb);
 
 JVSStatus readPacket(JVSPacket *packet);
 JVSStatus writePacket(JVSPacket *packet);

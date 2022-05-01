@@ -100,8 +100,16 @@ int main(int argc, char **argv)
         io.deviceID = 1;
         io.chainedIO = NULL;
 
+        // Create the FFB emulation
+        FFBState ffb = {0};
+        FFBStatus ffbStatus = initFFB(&ffb, FFB_EMULATION_TYPE_SEGA_JVS, &io, "/dev/ttyUSB0");
+        if (ffbStatus == FFB_STATUS_SUCCESS)
+        {
+            debug(0, "  Force Feedback:\t%s\n", "SEGA JVS");
+        }
+
         debug(1, "Init inputs\n");
-        JVSInputStatus inputStatus = initInputs(config.defaultGamePath, config.capabilitiesPath, config.secondCapabilitiesPath, &io, config.autoControllerDetection);
+        JVSInputStatus inputStatus = initInputs(config.defaultGamePath, config.capabilitiesPath, config.secondCapabilitiesPath, &io, config.autoControllerDetection, &ffb);
 
         // Only report these errors if the status has changed
         // from the last run. Since we restart this thread every 200ms
@@ -226,7 +234,7 @@ int main(int argc, char **argv)
         JVSStatus processingStatus;
         while (running == 1)
         {
-            processingStatus = processPacket(&io);
+            processingStatus = processPacket(&io, &ffb);
             switch (processingStatus)
             {
             case JVS_STATUS_ERROR_CHECKSUM:
@@ -242,6 +250,8 @@ int main(int argc, char **argv)
                 break;
             }
         }
+
+        closeFFB(&ffb);
 
         lastInputState = inputStatus;
         lastRotaryValue = rotaryValue;

@@ -40,6 +40,7 @@ typedef struct
     char devicePath[MAX_PATH_LENGTH];
     EVInputs inputs;
     int player;
+    FFBState *ffb;
 } MappingThreadArguments;
 
 void *wiiDeviceThread(void *_args)
@@ -171,6 +172,9 @@ void *deviceThread(void *_args)
         free(args);
         return 0;
     }
+
+    // Bind this controller for force feedback emulation
+    bindController(args->ffb, fd);
 
     struct input_event event;
 
@@ -341,13 +345,14 @@ void *deviceThread(void *_args)
 
     return 0;
 }
-void startThread(EVInputs *inputs, char *devicePath, int wiiMode, int player, JVSIO *jvsIO)
+void startThread(EVInputs *inputs, char *devicePath, int wiiMode, int player, JVSIO *jvsIO, FFBState *ffb)
 {
     MappingThreadArguments *args = malloc(sizeof(MappingThreadArguments));
     strcpy(args->devicePath, devicePath);
     memcpy(&args->inputs, inputs, sizeof(EVInputs));
     args->player = player;
     args->jvsIO = jvsIO;
+    args->ffb = ffb;
 
     if (wiiMode)
     {
@@ -631,7 +636,7 @@ JVSInputStatus getInputs(DeviceList *deviceList)
  * @param autoDetect If we should automatically map controllers without mappings
  * @returns The status of the operation
  **/
-JVSInputStatus initInputs(char *outputMappingPath, char *configPath, char *secondConfigPath, JVSIO *jvsIO, int autoDetect)
+JVSInputStatus initInputs(char *outputMappingPath, char *configPath, char *secondConfigPath, JVSIO *jvsIO, int autoDetect, FFBState *ffb)
 {
     OutputMappings outputMappings = {0};
     DeviceList *deviceList = (DeviceList *)malloc(sizeof(DeviceList));

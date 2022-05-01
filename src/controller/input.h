@@ -4,6 +4,7 @@
 #include <linux/input.h>
 
 #include "jvs/io.h"
+#include "ffb/ffb.h"
 
 #define WIIMOTE_DEVICE_NAME "nintendo-wii-remote"
 #define WIIMOTE_DEVICE_NAME_IR "nintendo-wii-remote-ir"
@@ -2414,7 +2415,7 @@ typedef enum
     JVS_INPUT_STATUS_SUCCESS
 } JVSInputStatus;
 
-JVSInputStatus initInputs(char *outputMappingPath, char *configPath, char *secondConfigPath, JVSIO *jvsIO, int autoDetect);
+JVSInputStatus initInputs(char *outputMappingPath, char *configPath, char *secondConfigPath, JVSIO *jvsIO, int autoDetect, FFBState *ffb);
 int evDevFromString(char *evDevString);
 JVSInputStatus getInputs(DeviceList *deviceList);
 ControllerInput controllerInputFromString(char *controllerInputString);

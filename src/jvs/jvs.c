@@ -1,6 +1,7 @@
 #include "jvs/jvs.h"
 #include "hardware/device.h"
 #include "console/debug.h"
+#include "ffb/ffb.h"
 
 #include <time.h>
 
@@ -141,7 +142,7 @@ void writeFeatures(JVSPacket *outputPacket, JVSCapabilities *capabilities)
  *
  * @returns The status of the entire operation
  */
-JVSStatus processPacket(JVSIO *jvsIO)
+JVSStatus processPacket(JVSIO *jvsIO, FFBState *ffb)
 {
 	/* Initially read in a packet */
 	JVSStatus readPacketStatus = readPacket(&inputPacket);
@@ -380,6 +381,10 @@ JVSStatus processPacket(JVSIO *jvsIO)
 		{
 			debug(1, "CMD_WRITE_GPO\n");
 			size = 2 + inputPacket.data[index + 1];
+			for (int i = 0; i < inputPacket.data[index + 1]; i++)
+			{
+				setGeneralPurposeOutputByte(jvsIO, i, inputPacket.data[index + 2 + i]);
+			}
 			outputPacket.data[outputPacket.length] = REPORT_SUCCESS;
 			outputPacket.length += 1;
 		}
@@ -389,6 +394,7 @@ JVSStatus processPacket(JVSIO *jvsIO)
 		{
 			debug(1, "CMD_WRITE_GPO_BYTE\n");
 			size = 3;
+			setGeneralPurposeOutputByte(jvsIO, inputPacket.data[index + 1] - 1, inputPacket.data[index + 2]);
 			outputPacket.data[outputPacket.length++] = REPORT_SUCCESS;
 		}
 		break;
@@ -396,6 +402,10 @@ JVSStatus processPacket(JVSIO *jvsIO)
 		case CMD_WRITE_GPO_BIT:
 		{
 			debug(1, "CMD_WRITE_GPO_BIT\n");
+			int bitIndex = inputPacket.data[index + 1] - 1;
+			int data = inputPacket.data[index + 2]; // 0 off, 1 on, 2 invert
+			printf("ATTEMPTED TO WRITE BIT, PROGRAM CLOSING!!!\n");
+			abort();
 			size = 3;
 			outputPacket.data[outputPacket.length++] = REPORT_SUCCESS;
 		}
@@ -562,6 +572,10 @@ JVSStatus processPacket(JVSIO *jvsIO)
 		}
 		index += size;
 	}
+
+	/* Process the FFB frame once the JVS frame has completed */
+	if (ffb != NULL)
+		processFFB(ffb);
 
 	return writePacket(&outputPacket);
 }
