@@ -260,6 +260,7 @@ JVSCLIStatus printListing()
             printDeviceListing(&deviceList->devices[i]);
         }
     }
+    debug(0, "\nPlease ignore WiiMote + Aimtrak listings. These are handeled differently and won't present properly here.\n");
 
     if (deviceList != NULL)
     {
