@@ -33,10 +33,12 @@ On games that require a sense line, the following has to be wired up:
 |                        |                                               |                        |
 |          SENSE (RED)   |----------+------------------------------------| GPIO 12                |
                                     |
-                                    +---- (1kOhm Resistor or 4 Signal Dioes) ---- GND
+                                    +---- (1kOhm Resistor or 4 Signal Diodes) ---- GND
 ```
 
 A 1KOhm resistor or 4 signal diodes are known to work properly, the purpose of these is to create a 2.5 volt drop.
+
+> Warning: A 1KOhm resistor will not work with the Triforce system, please use the 4 signal diodes for this purpose.
 
 When buying a USB to RS485 dongle be sure to buy one with an FTDI chip inside. The CP2102 and other chips have been found to not work well. 
 
