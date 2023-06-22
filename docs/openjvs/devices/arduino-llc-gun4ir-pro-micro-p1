@@ -1,7 +1,33 @@
+# Note: Description of buttons is in Gun4IR terminology
+# Gun4IR is a DIY project with different target gun-housings which means that
+# the number of available buttons and the layout WILL vary depending on target housing.
+# This template will give you all supported buttons but changes might be necessary to fit your personal button layout.
+#
+# ATTENSION: On Pi/Linux the Gun4IR fimware will configure a USB composite device (gamepad/mouse/keyboard.. all at once) so that
+# it might be necessary to disable the generic-mouse device in order to NOT have the devices be configured as multiple player's input devices.
+
+# Start-Button
 BTN_PINKIE CONTROLLER_BUTTON_START
+# Select
 BTN_TOP2 CONTROLLER_BUTTON_COIN
+# Trigger
 BTN_TRIGGER CONTROLLER_BUTTON_A
+# A-Button
 BTN_THUMB CONTROLLER_BUTTON_B
+# B-Button
 BTN_THUMB2 CONTROLLER_BUTTON_C
+#Pedal-Button (if configured)
+BTN_TOP CONTROLLER_BUTTON_D
+
+# D-PAD Up
+BTN_BASE CONTROLLER_BUTTON_UP
+# D-PAD Down
+BTN_BASE3 CONTROLLER_BUTTON_DOWN
+# D-PAD Left
+BTN_BASE4 CONTROLLER_BUTTON_TEST
+# D-PAD Right
+BTN_BASE2 CONTROLLER_BUTTON_SERVICE
+
+# Analog Axes
 ABS_X CONTROLLER_ANALOGUE_X
 ABS_Y CONTROLLER_ANALOGUE_Y
