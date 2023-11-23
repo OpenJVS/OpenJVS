@@ -18,6 +18,8 @@ OpenJVS requires a USB RS485 dongle to communicate, or an OpenJVS Hat and suppor
 | Ringedge                        | Requires JVS Hat          | Yes                    |
 | Ringedge 2                      | Requires JVS Hat          | Yes                    |
 | Namco System 23 (Time Crisis 2) | Working     | Yes                 |
+| Namco System Super 23 (Final Furlong / GP500) | Working     | Yes                 |
+| Namco System 246 (Vampire Night)| Working     | No                  |
 | Namco System 256                | Working     | Yes                 |
 | Taito Type X+                   | Working     | Yes                 |
 | Taito Type X2                   | Working     | Yes                 |
