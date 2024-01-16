@@ -1,0 +1,13 @@
+## Chinese Gun4ir TC4 Style Gun ##
+# This gun has a trigger and 4 side buttons x3 on the left x1 on the right #
+# When using this gun on TC4 Namco 256 edit this map add TEST, UP and A buttons so you can calibrate gun in test menu #
+# After Gun calibration set map buttons back to previous settings #
+
+BTN_TRIGGER CONTROLLER_TRIGGER
+BTN_TOP2 CONTROLLER_COIN
+BTN_PINKIE CONTROLLER_A
+BTN_THUMB CONTROLLER_B
+BTN_THUMB2 CONTROLLER_C
+
+ABS_X CONTROLLER_ANALOGUE_X REVERSED
+ABS_Y CONTROLLER_ANALOGUE_Y
