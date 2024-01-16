@@ -1,0 +1,14 @@
+# Namco FCA-1 IO PCB like used in some driving games, IE Wangan Midnight and Mario Kart
+DISPLAY_NAME Namco FCA-1
+NAME namco ltd.;FCA-1;Ver1.01;JPN,Multipurpose + Rotary Encoder
+PLAYERS 1
+SWITCHES 16
+COMMAND_VERSION 17
+JVS_VERSION 32
+COMMS_VERSION 16
+COINS 2
+GENERAL_PURPOSE_OUTPUTS 6
+ANALOGUE_IN_BITS 10        # Reports as 0 or unknown resolution
+ANALOGUE_IN_CHANNELS 7
+ROTARY_CHANNELS 2
+ANALOGUE_OUT_CHANNELS 4
