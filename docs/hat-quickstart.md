@@ -12,11 +12,15 @@ If you are using a Pi 2 or 3, you can only run JVS and cannot run Serial or onbo
 
 Download the Raspberry Pi Imager from https://www.raspberrypi.org/software/. This will download a program available for Ubuntu, Mac and Windows.
 
-Insert your SD card, and run the Imager. For the OS, select Other Raspberry Pi OS, and then select Raspberry Pi OS Lite. Then select the SD card you want to write to, remembering this will remove everything on the Pi.
+Insert your SD card, and run the Imager. For the OS, select Other Raspberry Pi OS, and then select Raspberry Pi OS Lite. Then select the SD card you want to write to, remembering this will remove everything already on the SD.
 
-Once the image has burnt, safely remove the card and re-insert it into your computer.
+When it asks if you want to "apply OS customization settings" click on the "Edit Settings" button. Here, you should check the "Set Hostname" box, then enter the Username and Password you will use as your Linux user. As the last step on the 'General' tab, set up the Wireless LAN settings, where you will need to add your ssid and password as well as country code.
 
-Create a blank file called 'ssh' in the boot partition to enable SSH.
+Finally, click on the 'Services' tab and then check the "Enable SSH" box. The password and user will be the ones you set up on the previous tab.
+
+More information can be found here: https://www.raspberrypi.org/documentation/configuration/wireless/headless.md.
+
+Once the image has burnt, safely remove the card and then re-insert it into your computer.
 
 Next you need to modify config.txt, adding the following to the bottom of the file.
 
@@ -35,44 +39,29 @@ dtoverlay=uart4
 
 Next you must modify cmdline.txt
 
-Remove the initial serial console line, which will look like the following. Remove from `console` up to the first space.
+Remove the initial serial console line, from `console` up to the first space. It should look similar to the following line:
 
 ```
 console=serial0,115200
 ```
 
-Now we need to setup WiFi. Add a file called wpa_supplicant.conf to the boot partition, containing the following. You will need to add your ssid, and password as well as country code. More information can be found here: https://www.raspberrypi.org/documentation/configuration/wireless/headless.md.
+Safely remove the SD card, place it into the Pi and then boot it.
 
-```
-ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
-update_config=1
-country=<Insert 2 letter ISO 3166-1 country code here>
-
-network={
- ssid="<Name of your wireless LAN>"
- psk="<Password for your wireless LAN>"
-}
-```
-
-Safely remove the SD card, place it into the Pi and boot the pi
-
-You now need to find the Pi's IP Address. You can either do this by looking on your router's web page, or by downloading a network scanning application. Another way is to type the following into a terminal:
+You now need to find the Pi's IP Address. You can either do this by looking on your router's web page, or by downloading a network scanning application. The fastest way is to make a ping to the Hostname you set on the OS Settings.
 
 ```
 ping raspberrypi.local
 ```
 
-You should see the IP address in the ping command
-
-Now you need to ssh into the Pi
+You should see the IP address in the ping command response. Use it to SSH into the Pi with the credentials you set on the OS Settings.
 
 ```
-ssh pi@<ip_address>
+ssh <user>@<ip_address>
 ```
 
 You should now be logged in and you should be able to see a prompt.
 
-If you're using a Pi3, theres more to do to disable bluetooth. Run the following:
+If you're using a Pi3, there's more to do to disable bluetooth. Run the following:
 
 ```
 sudo systemctl disable hciuart
@@ -117,17 +106,19 @@ SENSE_LINE_TYPE 2
 
 Now you need to tell OpenJVS how to communicate with JVS.
 
-If you're on a Pi4
+If you're on a Pi4:
 
 ```
 DEVICE_PATH /dev/ttyAMA1
 ```
 
-If you're on a Pi3
+If you're on a Pi3:
 
 ```
 DEVICE_PATH /dev/ttyAMA0
 ```
+
+Save the file and exit the editor.
 
 Finally make OpenJVS start on boot
 
