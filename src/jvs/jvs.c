@@ -493,6 +493,12 @@ JVSStatus processPacket(JVSIO *jvsIO)
 		}
 		break;
 
+		// Handle 0x50 to skip (WMMT4)
+		case 0x50:
+		{
+			break;
+		}
+
 		/* Namco Specific */
 		case CMD_NAMCO_SPECIFIC:
 		{
@@ -536,6 +542,30 @@ JVSStatus processPacket(JVSIO *jvsIO)
 			{
 				outputPacket.data[outputPacket.length++] = 0xFF;
 				outputPacket.data[outputPacket.length++] = 0xFF;
+			}
+			break;
+
+			// Namco command (Possible Card Vendor?), Wangan Midnight Maximum Tune 4
+			case 0x05: 
+			{
+				debug(1, "Namco Card Vendor 0x05%d\n", inputPacket.data[index + 2]);
+				size = 3 + inputPacket.data[index + 2];
+				outputPacket.data[outputPacket.length++] = 0x01;
+			}
+			break;
+			// Namco command (unknown), works with Wangan Midnight Maximum Tune 4
+			case 0x15:
+			{
+				size = 4;
+				outputPacket.data[outputPacket.length++] = 0x00;
+			}
+			break;
+
+			// Namco command (unknown), works with Wangan Midnight Maximum Tune 4 (Thanks axylol on GitHub)
+			case 0x16:
+			{
+				size = 4;
+				outputPacket.data[outputPacket.length++] = 0x00;
 			}
 			break;
 
