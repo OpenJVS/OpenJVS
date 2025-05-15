@@ -1,5 +1,3 @@
-[![Actions Status](https://belmontlansdown.com/img/github-badges/mantis.svg)](https://tresillian.prettejohn.com/view.php?id=526)
-
 # OpenJVS
 
 OpenJVS is an emulator for I/O boards in arcade machines that use the JVS protocol. It requires a USB RS485 converter, or an official OpenJVS HAT.
