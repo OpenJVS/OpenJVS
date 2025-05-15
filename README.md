@@ -1,4 +1,4 @@
-[![Actions Status](https://github.com/openjvs/openjvs/workflows/Build/badge.svg)](https://github.com/openjvs/openjvs/actions)
+[![Actions Status](https://belmontlansdown.com/img/github-badges/mantis.svg)](https://tresillian.prettejohn.com/view.php?id=526)
 
 # OpenJVS
 
