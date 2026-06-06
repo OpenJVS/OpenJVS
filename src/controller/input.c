@@ -593,7 +593,7 @@ JVSInputStatus getInputs(DeviceList *deviceList)
         if (test_bit_diff(EV_KEY, bit[0]))
         {
             ioctl(device, EVIOCGBIT(EV_KEY, KEY_MAX), bit[EV_KEY]);
-            if (test_bit_diff(BTN_START, bit[EV_KEY]))
+            if (test_bit_diff(BTN_START, bit[EV_KEY]) || test_bit_diff(BTN_TRIGGER, bit[EV_KEY]))
                 deviceList->devices[i].type = DEVICE_TYPE_JOYSTICK;
         }
 
